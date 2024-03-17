@@ -31,7 +31,11 @@ extern double	g_appTime;
 
 #include "GameStateMgr.h"
 #include "GameState_Asteroids.h"
-#include "Collision.h"
+
+#include "Windows.h"
+#include "ws2tcpip.h"
+#include <string>
+#include <iostream>
 
 
 #endif
