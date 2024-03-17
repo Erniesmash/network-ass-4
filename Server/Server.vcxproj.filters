@@ -21,10 +21,10 @@
     <ClInclude Include="Include\GameState_Asteroids.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="Include\GameStateList.h">
+    <ClInclude Include="Include\GameStateMgr.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="Include\GameStateMgr.h">
+    <ClInclude Include="Include\GameStateList.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="Include\Main.h">
@@ -32,11 +32,11 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="Include">
-      <UniqueIdentifier>{048d8172-d19d-4c05-9544-eaf13f7c07a0}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source">
-      <UniqueIdentifier>{401c06dd-4d13-4a3c-a2eb-089d90b9d743}</UniqueIdentifier>
+      <UniqueIdentifier>{4e2054f6-1801-496c-b779-7c79614201d6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include">
+      <UniqueIdentifier>{d521d26b-6c1e-4cae-9c89-8f36b3ce3451}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
