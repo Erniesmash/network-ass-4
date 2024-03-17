@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="Src\Collision.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\GameState_Asteroids.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\GameStateMgr.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Main.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Include\Collision.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\GameState_Asteroids.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\GameStateList.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\GameStateMgr.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Main.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Include">
+      <UniqueIdentifier>{048d8172-d19d-4c05-9544-eaf13f7c07a0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source">
+      <UniqueIdentifier>{401c06dd-4d13-4a3c-a2eb-089d90b9d743}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

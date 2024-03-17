@@ -1,14 +1,14 @@
 /******************************************************************************/
 /*!
-\file		Collision.cpp
-\author 	Ernest Cheo
-\par    	email: e.cheo\@digipen.edu
-\date   	January 29, 2023
+\file			Collision.cpp
+\author 	
+\par    	
+\date   	
 \brief		This is the collision source file that has the function
-			CollisionIntersection_RectRect that will check for both
-			dynamic and static collision between 2 AABBs.
+					CollisionIntersection_RectRect that will check for both
+					dynamic and static collision between 2 AABBs.
 
-Copyright (C) 2023 DigiPen Institute of Technology.
+Copyright (C) 2024 DigiPen Institute of Technology.
 Reproduction or disclosure of this file or its contents without the
 prior written consent of DigiPen Institute of Technology is prohibited.
  */

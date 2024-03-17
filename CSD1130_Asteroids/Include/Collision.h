@@ -1,21 +1,21 @@
 /******************************************************************************/
 /*!
-\file		Collision.h
-\author 	Ernest Cheo
-\par    	email: e.cheo\@digipen.edu
-\date   	January 29, 2023
+\file			Collision.h
+\author
+\par    	
+\date   	
 \brief		This is the collision header file that has the function
-			CollisionIntersection_RectRect that will check for both
-			dynamic and static collision between 2 AABBs.
+					CollisionIntersection_RectRect that will check for both
+					dynamic and static collision between 2 AABBs.
 
-Copyright (C) 2023 DigiPen Institute of Technology.
+Copyright (C) 2024 DigiPen Institute of Technology.
 Reproduction or disclosure of this file or its contents without the
 prior written consent of DigiPen Institute of Technology is prohibited.
  */
  /******************************************************************************/
 
-#ifndef CSD1130_COLLISION_H_
-#define CSD1130_COLLISION_H_
+#ifndef ASS4_COLLISION_H_
+#define ASS4_COLLISION_H_
 
 #include "AEEngine.h"
 
@@ -37,4 +37,4 @@ bool CollisionIntersection_RectRect(const AABB & aabb1, const AEVec2 & vel1,
 									const AABB & aabb2, const AEVec2 & vel2);
 
 
-#endif // CSD1130_COLLISION_H_
+#endif // ASS4_COLLISION_H_

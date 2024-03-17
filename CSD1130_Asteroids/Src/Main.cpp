@@ -1,13 +1,12 @@
 /******************************************************************************/
 /*!
 \file		Main.cpp
-\author 	Ernest Cheo
-\par    	email: e.cheo\@digipen.edu
-\date   	January 29, 2023
-\brief		This is where everything starts! It is main, the starting point
-			of the application.
+\author 	
+\par    	
+\date   	
+\brief		
 
-Copyright (C) 2023 DigiPen Institute of Technology.
+Copyright (C) 2024 DigiPen Institute of Technology.
 Reproduction or disclosure of this file or its contents without the
 prior written consent of DigiPen Institute of Technology is prohibited.
  */
@@ -45,7 +44,7 @@ int WINAPI WinMain(_In_ HINSTANCE instanceH, _In_opt_ HINSTANCE prevInstanceH, _
 	AESysInit (instanceH, show, 800, 600, 1, 60, false, NULL);
 
 	// Changing the window title
-	AESysSetWindowTitle("Asteroids Demo!");
+	AESysSetWindowTitle("Asteroids");
 
 	//set background color
 	AEGfxSetBackgroundColor(0.0f, 0.0f, 0.0f);

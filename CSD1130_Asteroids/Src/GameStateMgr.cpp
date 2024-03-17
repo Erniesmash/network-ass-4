@@ -1,13 +1,13 @@
 /******************************************************************************/
 /*!
-\file		GameStateMgr.cpp
-\author 	Ernest Cheo
-\par    	email: e.cheo\@digipen.edu
-\date   	January 29, 2023
+\file			GameStateMgr.cpp
+\author 	
+\par    	
+\date   	
 \brief		This is the Game State Manager source file that handles the level
-			changing, the function pointers for the level functions.
+					changing, the function pointers for the level functions.
 
-Copyright (C) 2023 DigiPen Institute of Technology.
+Copyright (C) 2024 DigiPen Institute of Technology.
 Reproduction or disclosure of this file or its contents without the
 prior written consent of DigiPen Institute of Technology is prohibited.
  */

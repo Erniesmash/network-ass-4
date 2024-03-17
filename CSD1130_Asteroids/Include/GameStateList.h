@@ -1,20 +1,20 @@
 /******************************************************************************/
 /*!
-\file		GameStateList.h
-\author 	Ernest Cheo
-\par    	email: e.cheo\@digipen.edu
-\date   	January 29, 2023
+\file			GameStateList.h
+\author 	
+\par    	
+\date   	
 \brief		This is the GameStateList header file that simply defines the
-			enum for the various states in the game.
+					enum for the various states in the game.
 
-Copyright (C) 2023 DigiPen Institute of Technology.
+Copyright (C) 2024 DigiPen Institute of Technology.
 Reproduction or disclosure of this file or its contents without the
 prior written consent of DigiPen Institute of Technology is prohibited.
  */
  /******************************************************************************/
 
-#ifndef CSD1130_GAME_STATE_LIST_H_
-#define CSD1130_GAME_STATE_LIST_H_
+#ifndef ASS4_GAME_STATE_LIST_H_
+#define ASS4_GAME_STATE_LIST_H_
 
 // ---------------------------------------------------------------------------
 // game state list
@@ -32,4 +32,4 @@ enum
 
 // ---------------------------------------------------------------------------
 
-#endif // CSD1130_GAME_STATE_LIST_H_
+#endif // ASS4_GAME_STATE_LIST_H_

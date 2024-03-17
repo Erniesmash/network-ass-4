@@ -1,13 +1,13 @@
 /******************************************************************************/
 /*!
-\file		GameState_Asteroids.cpp
-\author 	Ernest Cheo
-\par    	email: e.cheo\@digipen.edu
-\date   	January 29, 2023
+\file			GameState_Asteroids.cpp
+\author 	
+\par    	
+\date   	
 \brief		This is the level source file that has the main level functions
-			load, init, update, draw, free, unload.
+					load, init, update, draw, free, unload.
 
-Copyright (C) 2023 DigiPen Institute of Technology.
+Copyright (C) 2024 DigiPen Institute of Technology.
 Reproduction or disclosure of this file or its contents without the
 prior written consent of DigiPen Institute of Technology is prohibited.
  */
@@ -15,8 +15,8 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 
 #include "main.h"
 #include <iostream>
-#include<cstdlib>
-#include<ctime>
+#include <cstdlib>
+#include <ctime>
 
 /******************************************************************************/
 /*!
@@ -389,7 +389,7 @@ void GameStateAsteroidsUpdate(void)
 				if ((pInst2->flag & FLAG_ACTIVE) == 0)
 					continue;
 				if (sShipLives >= 0 && sScore < 5000) {
-					if (pInst2->pObject->type == TYPE_SHIP) {
+					if (pInst2->pObject->type == TYPE_SHIP) {		
 						if (CollisionIntersection_RectRect(pInst->boundingBox, pInst->velCurr, pInst2->boundingBox, pInst2->velCurr)) {
 							gameObjInstDestroy(pInst);
 							sShipLives--;

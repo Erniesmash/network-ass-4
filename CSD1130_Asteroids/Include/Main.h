@@ -1,21 +1,21 @@
 /******************************************************************************/
 /*!
 \file		Main.h
-\author 	Ernest Cheo
-\par    	email: e.cheo\@digipen.edu
-\date   	January 29, 2023
+\author 	
+\par    	
+\date   	
 \brief		This is where everything starts! It is main, the starting point
-			of the application. This source file also defines some global vars.
+					of the application. This source file also defines some global vars.
 
-Copyright (C) 2023 DigiPen Institute of Technology.
+Copyright (C) 2024 DigiPen Institute of Technology.
 Reproduction or disclosure of this file or its contents without the
 prior written consent of DigiPen Institute of Technology is prohibited.
- */
- /******************************************************************************/
+*/
+/******************************************************************************/
 
 
-#ifndef CS230_MAIN_H_
-#define CS230_MAIN_H_
+#ifndef ASS4_MAIN_H_
+#define ASS4_MAIN_H_
 
 //------------------------------------
 // Globals

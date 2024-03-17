@@ -1,20 +1,20 @@
 /******************************************************************************/
 /*!
-\file		GameState_Asteroids.h
-\author 	Ernest Cheo
-\par    	email: e.cheo\@digipen.edu
-\date   	January 29, 2023
+\file			GameState_Asteroids.h
+\author 	
+\par    	
+\date   	
 \brief		This is the level source file that has the main level functions
-			load, init, update, draw, free, unload.
+					load, init, update, draw, free, unload.
 
-Copyright (C) 2023 DigiPen Institute of Technology.
+Copyright (C) 2024 DigiPen Institute of Technology.
 Reproduction or disclosure of this file or its contents without the
 prior written consent of DigiPen Institute of Technology is prohibited.
  */
  /******************************************************************************/
 
-#ifndef CSD1130_GAME_STATE_PLAY_H_
-#define CSD1130_GAME_STATE_PLAY_H_
+#ifndef ASS4_GAME_STATE_PLAY_H_
+#define ASS4_GAME_STATE_PLAY_H_
 
 // ---------------------------------------------------------------------------
 
@@ -27,6 +27,6 @@ void GameStateAsteroidsUnload(void);
 
 // ---------------------------------------------------------------------------
 
-#endif // CSD1130_GAME_STATE_PLAY_H_
+#endif // ASS4_GAME_STATE_PLAY_H_
 
 
