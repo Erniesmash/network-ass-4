@@ -143,8 +143,8 @@ int WinsockServerConnection() {
 	addrinfo hints{};
 	SecureZeroMemory(&hints, sizeof(hints));
 	hints.ai_family = AF_INET;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_protocol = IPPROTO_TCP;
+	hints.ai_socktype = SOCK_DGRAM;
+	hints.ai_protocol = IPPROTO_UDP;
 
 	addrinfo* info = nullptr;
 	errorCode = getaddrinfo(serverIP.c_str(), serverPort.c_str(), &hints, &info);
@@ -154,34 +154,26 @@ int WinsockServerConnection() {
 		return errorCode;
 	}
 
-	// Create socket and connect to Server
-	addrinfo* ptr = NULL;
-	SOCKET clientSocket = NULL;
-	for (ptr = info; ptr != NULL;ptr = ptr->ai_next) {
-		clientSocket = socket(
-			info->ai_family,
-			info->ai_socktype,
-			info->ai_protocol);
-		if (clientSocket == INVALID_SOCKET) {
-			std::cerr << "socket() failed." << std::endl;
-			freeaddrinfo(info);
-			WSACleanup();
-			return 2;
-		}
-
-		errorCode = connect(
-			clientSocket,
-			info->ai_addr,
-			static_cast<int>(info->ai_addrlen));
-		if (errorCode == SOCKET_ERROR) {
-			std::cerr << "connect() failed." << std::endl;
-			freeaddrinfo(info);
-			closesocket(clientSocket);
-			WSACleanup();
-			return 3;
-		}
-		break;
+	// Create UDP socket
+	SOCKET clientSocket = socket(info->ai_family, info->ai_socktype, info->ai_protocol);
+	if (clientSocket == INVALID_SOCKET) {
+		std::cerr << "socket() failed: " << WSAGetLastError() << std::endl;
+		freeaddrinfo(info);
+		WSACleanup();
+		return 2;
 	}
 
-	std::cin.ignore(30000, '\n');
+	// Send a test message
+	const char* message = "Hello, server!";
+	errorCode = sendto(clientSocket, message, strlen(message), 0, info->ai_addr, static_cast<int>(info->ai_addrlen));
+	if (errorCode == SOCKET_ERROR) {
+		std::cerr << "sendto() failed: " << WSAGetLastError() << std::endl;
+		freeaddrinfo(info);
+		closesocket(clientSocket);
+		WSACleanup();
+		return 3;
+	}
+
+	std::cout << "Message sent successfully." << std::endl;
+	return 0;
 }

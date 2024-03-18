@@ -134,8 +134,8 @@ int WinsockServerSetup() {
 	addrinfo hints{};
 	SecureZeroMemory(&hints, sizeof(hints));
 	hints.ai_family = AF_INET;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_protocol = IPPROTO_TCP;
+	hints.ai_socktype = SOCK_DGRAM;
+	hints.ai_protocol = IPPROTO_UDP;
 	constexpr int HOSTBUFFERSIZE = 16;
 	char hostBuffer[HOSTBUFFERSIZE];
 	gethostname(hostBuffer, HOSTBUFFERSIZE);
@@ -185,12 +185,25 @@ int WinsockServerSetup() {
 		return 2;
 	}
 
-	// Set to listening mode, for 1 client
-	errorCode = listen(listenerSocket, SOMAXCONN);
-	if (errorCode != NO_ERROR) {
-		std::cerr << "listen() failed." << std::endl;
-		closesocket(listenerSocket);
-		WSACleanup();
-		return 3;
+	// Receive datagrams
+	char buffer[1024];
+	sockaddr_in clientAddr;
+	int clientAddrLen = sizeof(clientAddr);
+	while (true) {
+		int bytesRead = recvfrom(listenerSocket, buffer, sizeof(buffer), 0,
+			reinterpret_cast<sockaddr*>(&clientAddr), &clientAddrLen);
+		if (bytesRead == SOCKET_ERROR) {
+			std::cerr << "recvfrom() failed: " << WSAGetLastError() << std::endl;
+			break;
+		}
+		buffer[bytesRead] = '\0';
+
+		sockaddr_in senderAddr{};
+		int senderAddrSize = sizeof(senderAddr);
+		getpeername(listenerSocket, reinterpret_cast<sockaddr*>(&senderAddr), &senderAddrSize);
+		char senderIPAddress[INET_ADDRSTRLEN];
+		inet_ntop(AF_INET, &(senderAddr.sin_addr), senderIPAddress, INET_ADDRSTRLEN);
+
+		std::cout << "Received datagram: " << buffer << std::endl;
 	}
 }
