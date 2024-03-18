@@ -19,6 +19,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 float	  g_dt;
 double  g_appTime;
 
+int constexpr MAX_CLIENTS = 1;
 
 /******************************************************************************/
 /*!
@@ -111,6 +112,8 @@ int WINAPI WinMain(_In_ HINSTANCE instanceH, _In_opt_ HINSTANCE prevInstanceH, _
 
 	// free the system
 	AESysExit();
+
+	return 0;
 }
 
 int WinsockServerSetup() {
@@ -189,7 +192,9 @@ int WinsockServerSetup() {
 	char buffer[1024];
 	sockaddr_in clientAddr;
 	int clientAddrLen = sizeof(clientAddr);
-	while (true) {
+
+	int currClient{};
+	while (currClient < MAX_CLIENTS) {
 		int bytesRead = recvfrom(listenerSocket, buffer, sizeof(buffer), 0,
 			reinterpret_cast<sockaddr*>(&clientAddr), &clientAddrLen);
 		if (bytesRead == SOCKET_ERROR) {
@@ -198,12 +203,21 @@ int WinsockServerSetup() {
 		}
 		buffer[bytesRead] = '\0';
 
-		sockaddr_in senderAddr{};
-		int senderAddrSize = sizeof(senderAddr);
-		getpeername(listenerSocket, reinterpret_cast<sockaddr*>(&senderAddr), &senderAddrSize);
-		char senderIPAddress[INET_ADDRSTRLEN];
-		inet_ntop(AF_INET, &(senderAddr.sin_addr), senderIPAddress, INET_ADDRSTRLEN);
-
 		std::cout << "Received datagram: " << buffer << std::endl;
+
+		// Send Ship ID to client
+		SERVER_MESSAGE_FORMAT toSend{};
+		toSend.ShipID = currClient;
+
+		int errorCode = sendto(listenerSocket,
+			reinterpret_cast<const char*>(&toSend),
+			sizeof(SERVER_MESSAGE_FORMAT),
+			0,
+			reinterpret_cast<sockaddr*>(&clientAddr), 
+			clientAddrLen);
+
+		currClient++;
 	}
+
+	return 0;
 }

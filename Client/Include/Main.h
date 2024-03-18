@@ -38,6 +38,11 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include <memory>
 #include <thread>
 
+struct SERVER_MESSAGE_FORMAT
+{
+	int ShipID;
+};
+
 //------------------------------------
 // Globals
 
@@ -46,6 +51,9 @@ extern double	g_appTime;
 
 extern std::string serverIP;
 extern std::string serverPort;
+extern addrinfo* serverInfo;
+extern SOCKET clientSocket;
+extern int assignedShipID;
 
 int WinsockServerConnection();
 

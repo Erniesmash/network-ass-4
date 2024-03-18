@@ -16,6 +16,22 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #ifndef ASS4_GAME_STATE_PLAY_H_
 #define ASS4_GAME_STATE_PLAY_H_
 
+enum MESSAGE_TYPE
+{
+	// list of possible message types
+	TYPE_MOVEMENT_UP,
+	TYPE_MOVEMENT_DOWN,
+	TYPE_MOVEMENT_LEFT,
+	TYPE_MOVEMENT_RIGHT,
+	TYPE_SHOOT
+};
+
+struct CLIENT_MESSAGE_FORMAT
+{
+	int ShipID;
+	int MessageType;
+};
+
 // ---------------------------------------------------------------------------
 
 void GameStateAsteroidsLoad(void);
@@ -24,6 +40,8 @@ void GameStateAsteroidsUpdate(void);
 void GameStateAsteroidsDraw(void);
 void GameStateAsteroidsFree(void);
 void GameStateAsteroidsUnload(void);
+
+void SendEventToServer(int shipID, MESSAGE_TYPE messageType);
 
 // ---------------------------------------------------------------------------
 

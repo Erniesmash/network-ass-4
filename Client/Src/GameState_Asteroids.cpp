@@ -23,19 +23,19 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 	Defines
 */
 /******************************************************************************/
-const unsigned int	GAME_OBJ_NUM_MAX		= 32;			// The total number of different objects (Shapes)
-const unsigned int	GAME_OBJ_INST_NUM_MAX	= 2048;			// The total number of different game object instances
+const unsigned int	GAME_OBJ_NUM_MAX			= 32;						// The total number of different objects (Shapes)
+const unsigned int	GAME_OBJ_INST_NUM_MAX	= 2048;					// The total number of different game object instances
 
 
-const unsigned int	SHIP_INITIAL_NUM		= 3;			// initial number of ship lives
-const float			SHIP_SIZE				= 16.0f;		// ship size
-const float			SHIP_ACCEL_FORWARD		= 60.0f;		// ship forward acceleration (in m/s^2)
-const float			SHIP_ACCEL_BACKWARD		= 60.0f;		// ship backward acceleration (in m/s^2)
-const float			SHIP_ROT_SPEED			= (2.0f * PI);	// ship rotation speed (degree/second)
+const unsigned int	SHIP_INITIAL_NUM			= 3;						// initial number of ship lives
+const float					SHIP_SIZE							= 16.0f;				// ship size
+const float					SHIP_ACCEL_FORWARD		= 60.0f;				// ship forward acceleration (in m/s^2)
+const float					SHIP_ACCEL_BACKWARD		= 60.0f;				// ship backward acceleration (in m/s^2)
+const float					SHIP_ROT_SPEED				= (2.0f * PI);	// ship rotation speed (degree/second)
 
-const float			BULLET_SPEED			= 150.0f;		// bullet speed (m/s)
+const float					BULLET_SPEED					= 150.0f;				// bullet speed (m/s)
 
-const float         BOUNDING_RECT_SIZE      = 1.0f;         // this is the normalized bounding rectangle (width and height) sizes - AABB collision data
+const float         BOUNDING_RECT_SIZE    = 1.0f;         // this is the normalized bounding rectangle (width and height) sizes - AABB collision data
 
 // -----------------------------------------------------------------------------
 enum TYPE
@@ -44,7 +44,6 @@ enum TYPE
 	TYPE_SHIP = 0, 
 	TYPE_BULLET,
 	TYPE_ASTEROID,
-
 	TYPE_NUM
 };
 
@@ -213,8 +212,8 @@ void GameStateAsteroidsInit(void)
 	// Create astroids
 
 	// Creates initial bullet instance
-	GameObjInst * bullet = gameObjInstCreate(TYPE_BULLET, 0, nullptr, nullptr, 0.0f);
-	gameObjInstDestroy(bullet);
+	//GameObjInst * bullet = gameObjInstCreate(TYPE_BULLET, 0, nullptr, nullptr, 0.0f);
+	//gameObjInstDestroy(bullet);
 	
 	// reset the score and the number of ships
 	sScore      = 0;
@@ -228,46 +227,40 @@ void GameStateAsteroidsInit(void)
 /******************************************************************************/
 void GameStateAsteroidsUpdate(void)
 {
-	// =========================
-	// update according to input
-	// =========================
+	// =========================================
+	// send message to server according to input
+	// =========================================
 	
 	if (AEInputCheckCurr(AEVK_UP))
 	{
-
+		SendEventToServer(assignedShipID, MESSAGE_TYPE::TYPE_MOVEMENT_UP);
 	}
 
 	if (AEInputCheckCurr(AEVK_DOWN))
 	{
-
+		SendEventToServer(assignedShipID, MESSAGE_TYPE::TYPE_MOVEMENT_DOWN);
 	}
 
 	if (AEInputCheckCurr(AEVK_LEFT))
 	{
-
+		SendEventToServer(assignedShipID, MESSAGE_TYPE::TYPE_MOVEMENT_LEFT);
 	}
 
 	if (AEInputCheckCurr(AEVK_RIGHT))
 	{
-
+		SendEventToServer(assignedShipID, MESSAGE_TYPE::TYPE_MOVEMENT_RIGHT);
 	}
 
-	// Shoot a bullet if space is triggered (Create a new object instance)
 	if (AEInputCheckTriggered(AEVK_SPACE))
 	{
-
+		SendEventToServer(assignedShipID, MESSAGE_TYPE::TYPE_SHOOT);
 	}
 	
-	// ===================================
-	// update active game object instances
-	// Example:
-	//		-- Wrap specific object instances around the world (Needed for the assignment)
-	//		-- Removing the bullets as they go out of bounds (Needed for the assignment)
-	//		-- If you have a homing missile for example, compute its new orientation 
-	//			(Homing missiles are not required for the Asteroids project)
-	//		-- Update a particle effect (Not required for the Asteroids project)
-	// ===================================
+	// ===================================================
+	// update active game object instances based on server
+	// ===================================================
 	
+
 
 	// =====================================
 	// calculate the matrix for all objects
@@ -459,4 +452,30 @@ void gameObjInstDestroy(GameObjInst * pInst)
 
 	// zero out the flag
 	pInst->flag = 0;
+}
+
+/******************************************************************************/
+/*!
+	Sends an event to the server
+*/
+/******************************************************************************/
+void SendEventToServer(int shipID, MESSAGE_TYPE messageType) {
+	CLIENT_MESSAGE_FORMAT toSend{};
+	toSend.MessageType = static_cast<int>(messageType);
+	toSend.ShipID = shipID;
+
+	int errorCode = sendto(clientSocket, 
+		reinterpret_cast<const char*>(&toSend), 
+		sizeof(CLIENT_MESSAGE_FORMAT),
+		0, 
+		serverInfo->ai_addr,
+		static_cast<int>(serverInfo->ai_addrlen));
+
+	if (errorCode == SOCKET_ERROR) {
+		std::cerr << "sendto() failed: " << WSAGetLastError() << std::endl;
+		freeaddrinfo(serverInfo);
+		closesocket(clientSocket);
+		WSACleanup();
+		return;
+	}
 }

@@ -27,6 +27,11 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 extern float	g_dt;
 extern double	g_appTime;
 
+struct SERVER_MESSAGE_FORMAT
+{
+	int ShipID;
+};
+
 // ---------------------------------------------------------------------------
 // includes
 

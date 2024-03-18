@@ -21,7 +21,9 @@ double	g_appTime;
 
 std::string serverIP;
 std::string serverPort;
-
+addrinfo* serverInfo;
+SOCKET clientSocket;
+int assignedShipID;
 
 /******************************************************************************/
 /*!
@@ -146,34 +148,51 @@ int WinsockServerConnection() {
 	hints.ai_socktype = SOCK_DGRAM;
 	hints.ai_protocol = IPPROTO_UDP;
 
-	addrinfo* info = nullptr;
-	errorCode = getaddrinfo(serverIP.c_str(), serverPort.c_str(), &hints, &info);
-	if ((errorCode) || (info == nullptr)) {
+	serverInfo = nullptr;
+	errorCode = getaddrinfo(serverIP.c_str(), serverPort.c_str(), &hints, &serverInfo);
+	if ((errorCode) || (serverInfo == nullptr)) {
 		std::cerr << "getaddrinfo() failed." << std::endl;
 		WSACleanup();
 		return errorCode;
 	}
 
 	// Create UDP socket
-	SOCKET clientSocket = socket(info->ai_family, info->ai_socktype, info->ai_protocol);
+	clientSocket = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol);
 	if (clientSocket == INVALID_SOCKET) {
 		std::cerr << "socket() failed: " << WSAGetLastError() << std::endl;
-		freeaddrinfo(info);
+		freeaddrinfo(serverInfo);
 		WSACleanup();
 		return 2;
 	}
 
 	// Send a test message
 	const char* message = "Hello, server!";
-	errorCode = sendto(clientSocket, message, strlen(message), 0, info->ai_addr, static_cast<int>(info->ai_addrlen));
+	errorCode = sendto(clientSocket, message, strlen(message), 0, serverInfo->ai_addr, static_cast<int>(serverInfo->ai_addrlen));
 	if (errorCode == SOCKET_ERROR) {
 		std::cerr << "sendto() failed: " << WSAGetLastError() << std::endl;
-		freeaddrinfo(info);
+		freeaddrinfo(serverInfo);
 		closesocket(clientSocket);
 		WSACleanup();
 		return 3;
 	}
 
 	std::cout << "Message sent successfully." << std::endl;
+
+	// Receive Ship ID from server
+	char buffer[sizeof(SERVER_MESSAGE_FORMAT)];
+	sockaddr_in servAddr;
+	int servAddrLen = sizeof(servAddr);
+
+	int bytesRead = recvfrom(clientSocket, buffer, sizeof(buffer), 0,
+		reinterpret_cast<sockaddr*>(&servAddr), &servAddrLen);
+	if (bytesRead == SOCKET_ERROR) {
+		std::cerr << "recvfrom() failed: " << WSAGetLastError() << std::endl;
+		return 1;
+	}
+
+	SERVER_MESSAGE_FORMAT recv{ *reinterpret_cast<SERVER_MESSAGE_FORMAT*>(buffer) };
+
+	std::cout << "Received ID: " << recv.ShipID << std::endl;
+
 	return 0;
 }
