@@ -13,12 +13,14 @@ prior written consent of DigiPen Institute of Technology is prohibited.
  /******************************************************************************/
 
 #include "main.h"
-#include <memory>
 
 // ---------------------------------------------------------------------------
 // Globals
 float		g_dt;
 double	g_appTime;
+
+std::string serverIP;
+std::string serverPort;
 
 
 /******************************************************************************/
@@ -36,11 +38,29 @@ int WINAPI WinMain(_In_ HINSTANCE instanceH, _In_opt_ HINSTANCE prevInstanceH, _
 		_CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
 	#endif
 
+
 	// Initialize the system
 	AESysInit (instanceH, show, 800, 600, 1, 60, false, NULL);
 
+	if (!freopen("CONIN$", "r", stdin)) {
+		return 1;
+	}
+
+	if (!freopen("CONOUT$", "w", stdout)) {
+		return 1;
+	}
+
+	if (!freopen("CONOUT$", "w", stderr)) {
+		return 1;
+	}
+
+	int ret{ WinsockServerConnection() };
+	if (ret) {
+		return ret;
+	}
+
 	// Changing the window title
-	AESysSetWindowTitle("Asteroids");
+	AESysSetWindowTitle("Asteroids Client");
 
 	//set background color
 	AEGfxSetBackgroundColor(0.0f, 0.0f, 0.0f);
@@ -95,4 +115,73 @@ int WINAPI WinMain(_In_ HINSTANCE instanceH, _In_opt_ HINSTANCE prevInstanceH, _
 
 	// free the system
 	AESysExit();
+
+	return 0;
+}
+
+int WinsockServerConnection() {
+	HWND hwndConsole = GetConsoleWindow();
+	SetForegroundWindow(hwndConsole);
+
+	std::cout << "Server IP Address: ";
+	std::cin >> serverIP;
+	std::cout << std::endl;
+	std::cout << "Server Port Number: ";
+	std::cin >> serverPort;
+	std::cout << std::endl;
+
+	// Start Winsock
+	WSADATA wsaData{};
+	SecureZeroMemory(&wsaData, sizeof(wsaData));
+	int errorCode = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	if (errorCode != NO_ERROR) {
+		std::cerr << "WSAStartup() failed." << std::endl;
+		return errorCode;
+	}
+
+	// Get Address Info of Server
+	addrinfo hints{};
+	SecureZeroMemory(&hints, sizeof(hints));
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_protocol = IPPROTO_TCP;
+
+	addrinfo* info = nullptr;
+	errorCode = getaddrinfo(serverIP.c_str(), serverPort.c_str(), &hints, &info);
+	if ((errorCode) || (info == nullptr)) {
+		std::cerr << "getaddrinfo() failed." << std::endl;
+		WSACleanup();
+		return errorCode;
+	}
+
+	// Create socket and connect to Server
+	addrinfo* ptr = NULL;
+	SOCKET clientSocket = NULL;
+	for (ptr = info; ptr != NULL;ptr = ptr->ai_next) {
+		clientSocket = socket(
+			info->ai_family,
+			info->ai_socktype,
+			info->ai_protocol);
+		if (clientSocket == INVALID_SOCKET) {
+			std::cerr << "socket() failed." << std::endl;
+			freeaddrinfo(info);
+			WSACleanup();
+			return 2;
+		}
+
+		errorCode = connect(
+			clientSocket,
+			info->ai_addr,
+			static_cast<int>(info->ai_addrlen));
+		if (errorCode == SOCKET_ERROR) {
+			std::cerr << "connect() failed." << std::endl;
+			freeaddrinfo(info);
+			closesocket(clientSocket);
+			WSACleanup();
+			return 3;
+		}
+		break;
+	}
+
+	std::cin.ignore(30000, '\n');
 }

@@ -17,6 +17,10 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #ifndef ASS4_MAIN_H_
 #define ASS4_MAIN_H_
 
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+
 //------------------------------------
 // Globals
 
@@ -33,6 +37,18 @@ extern double	g_appTime;
 #include "GameState_Asteroids.h"
 #include "Collision.h"
 
+#include "ws2tcpip.h"
+#pragma comment(lib, "ws2_32.lib")
+
+#include <string>
+#include <iostream>
+#include <memory>
+#include <thread>
+
+// ---------------------------------------------------------------------------
+// functions
+
+int WinsockServerSetup();
 
 #endif
 

@@ -17,11 +17,9 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #ifndef ASS4_MAIN_H_
 #define ASS4_MAIN_H_
 
-//------------------------------------
-// Globals
-
-extern float	g_dt;
-extern double	g_appTime;
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
 
 // ---------------------------------------------------------------------------
 // includes
@@ -32,11 +30,24 @@ extern double	g_appTime;
 #include "GameStateMgr.h"
 #include "GameState_Asteroids.h"
 
-#include "Windows.h"
 #include "ws2tcpip.h"
+#pragma comment(lib, "ws2_32.lib")
+
 #include <string>
 #include <iostream>
+#include <memory>
+#include <thread>
 
+//------------------------------------
+// Globals
+
+extern float	g_dt;
+extern double	g_appTime;
+
+extern std::string serverIP;
+extern std::string serverPort;
+
+int WinsockServerConnection();
 
 #endif
 

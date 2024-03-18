@@ -521,6 +521,8 @@ void GameStateAsteroidsUpdate(void)
 	Draws objects so that they can be seen on screen
 */
 /******************************************************************************/
+
+// TO REMOVE AS SERVER SHOULDNT DRAW
 void GameStateAsteroidsDraw(void)
 {
 	char strBuffer[1024];
