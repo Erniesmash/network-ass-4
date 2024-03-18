@@ -13,29 +13,9 @@ prior written consent of DigiPen Institute of Technology is prohibited.
  */
  /******************************************************************************/
 
-#include "main.h"
-#include <iostream>
-#include <cstdlib>
-#include <ctime>
+#include "GameState_Asteroids.h"
 
-/******************************************************************************/
-/*!
-	Defines
-*/
-/******************************************************************************/
-const unsigned int	GAME_OBJ_NUM_MAX		= 32;			// The total number of different objects (Shapes)
-const unsigned int	GAME_OBJ_INST_NUM_MAX	= 2048;			// The total number of different game object instances
-
-
-const unsigned int	SHIP_INITIAL_NUM		= 3;			// initial number of ship lives
-const float			SHIP_SIZE				= 16.0f;		// ship size
-const float			SHIP_ACCEL_FORWARD		= 60.0f;		// ship forward acceleration (in m/s^2)
-const float			SHIP_ACCEL_BACKWARD		= 60.0f;		// ship backward acceleration (in m/s^2)
-const float			SHIP_ROT_SPEED			= (2.0f * PI);	// ship rotation speed (degree/second)
-
-const float			BULLET_SPEED			= 150.0f;		// bullet speed (m/s)
-
-const float         BOUNDING_RECT_SIZE      = 1.0f;         // this is the normalized bounding rectangle (width and height) sizes - AABB collision data
+int currentAliveObjects{};
 
 // -----------------------------------------------------------------------------
 enum TYPE
@@ -50,40 +30,8 @@ enum TYPE
 
 // -----------------------------------------------------------------------------
 // object flag definition
-
 const unsigned long FLAG_ACTIVE				= 0x00000001;
 
-/******************************************************************************/
-/*!
-	Struct/Class Definitions
-*/
-/******************************************************************************/
-
-//Game object structure
-struct GameObj
-{
-	unsigned long		type;		// object type
-	AEGfxVertexList *	pMesh;		// This will hold the triangles which will form the shape of the object
-};
-
-// ---------------------------------------------------------------------------
-
-//Game object instance structure
-struct GameObjInst
-{
-	GameObj *			pObject;	// pointer to the 'original' shape
-	unsigned long		flag;		// bit flag or-ed together
-	float				scale;		// scaling value of the object instance
-	AEVec2				posCurr;	// object current position
-	AEVec2				velCurr;	// object current velocity
-	float				dirCurr;	// object current direction
-	AABB				boundingBox;// object bouding box that encapsulates the object
-	AEMtx33				transform;	// object transformation matrix: Each frame, 
-									// calculate the object instance's transformation matrix and save it here
-
-	//void				(*pfUpdate)(void);
-	//void				(*pfDraw)(void);
-};
 
 /******************************************************************************/
 /*!
@@ -96,7 +44,7 @@ static GameObj				sGameObjList[GAME_OBJ_NUM_MAX];				// Each element in this arr
 static unsigned long		sGameObjNum;								// The number of defined game objects
 
 // list of object instances
-static GameObjInst			sGameObjInstList[GAME_OBJ_INST_NUM_MAX];	// Each element in this array represents a unique game object instance (sprite)
+GameObjInst			sGameObjInstList[GAME_OBJ_INST_NUM_MAX];	// Each element in this array represents a unique game object instance (sprite)
 static unsigned long		sGameObjInstNum;							// The number of used game object instances
 
 // pointer to the ship object
@@ -208,10 +156,14 @@ void GameStateAsteroidsLoad(void)
 void GameStateAsteroidsInit(void)
 {
 	// create the main ship
+
+	// Ship ID 0
 	spShip = gameObjInstCreate(TYPE_SHIP, SHIP_SIZE, nullptr, nullptr, 0.0f);
 	AE_ASSERT(spShip);	
+	currentAliveObjects++;
 	
 	// CREATE THE INITIAL ASTEROIDS INSTANCES USING THE "gameObjInstCreate" FUNCTION
+	/*
 	AEVec2 asteroidVelocity;
 	AEVec2 asteroidPos;
 	std::srand(static_cast<unsigned int>(std::time(0)));
@@ -225,7 +177,8 @@ void GameStateAsteroidsInit(void)
 	// Creates initial bullet instance
 	GameObjInst * bullet = gameObjInstCreate(TYPE_BULLET, 0, nullptr, nullptr, 0.0f);
 	gameObjInstDestroy(bullet);
-	
+	*/
+
 	// reset the score and the number of ships
 	sScore      = 0;
 	sShipLives  = SHIP_INITIAL_NUM;
@@ -239,79 +192,17 @@ void GameStateAsteroidsInit(void)
 void GameStateAsteroidsUpdate(void)
 {
 	// =========================
+	// receive from client
+	// =========================
+	// Done in main
+
+	// =========================
 	// update according to input
 	// =========================
+	// Done in main
 
-	// This input handling moves the ship without any velocity nor acceleration
-	// It should be changed when implementing the Asteroids project
-	//
-	// Updating the velocity and position according to acceleration is 
-	// done by using the following:
-	// Pos1 = 1/2 * a*t*t + v0*t + Pos0
-	//
-	// In our case we need to divide the previous equation into two parts in order 
-	// to have control over the velocity and that is done by:
-	//
-	// v1 = a*t + v0		//This is done when the UP or DOWN key is pressed 
-	// Pos1 = v1*t + Pos0
-	
-	if (sShipLives >= 0 && sScore < 5000) {
-		if (AEInputCheckCurr(AEVK_UP))
-		{
-			// Find the velocity according to the acceleration
-			AEVec2 accel;
-			AEVec2Set(&accel, static_cast<f32>(cosf(spShip->dirCurr)), static_cast<f32>(sinf(spShip->dirCurr))); //normalized acceleration vector
-			accel = { accel.x * SHIP_ACCEL_FORWARD, accel.y * SHIP_ACCEL_FORWARD }; //full acceleration vector
+	std::lock_guard<std::mutex> lock(GAME_OBJECT_LIST_MUTEX);
 
-			spShip->velCurr = { accel.x * static_cast<f32>(AEFrameRateControllerGetFrameTime()) + spShip->velCurr.x,
-				accel.y * static_cast<f32>(AEFrameRateControllerGetFrameTime()) + spShip->velCurr.y };
-
-			// Limit your speed over here
-			spShip->velCurr = { spShip->velCurr.x * static_cast<f32>(0.99), spShip->velCurr.y * static_cast<f32>(0.99) };
-		}
-
-		if (AEInputCheckCurr(AEVK_DOWN))
-		{
-			// Find the velocity according to the acceleration
-			AEVec2 accel;
-			AEVec2Set(&accel, static_cast<f32>(-cosf(spShip->dirCurr)), static_cast<f32>(-sinf(spShip->dirCurr))); //normalized acceleration vector
-			accel = { accel.x * SHIP_ACCEL_FORWARD, accel.y * SHIP_ACCEL_FORWARD }; //full acceleration vector
-
-			spShip->velCurr = { accel.x * static_cast<f32>(AEFrameRateControllerGetFrameTime()) + spShip->velCurr.x,
-				accel.y * static_cast<f32>(AEFrameRateControllerGetFrameTime()) + spShip->velCurr.y };
-
-			// Limit your speed over here
-			spShip->velCurr = { spShip->velCurr.x * static_cast<f32>(0.99), spShip->velCurr.y * static_cast<f32>(0.99) };
-		}
-
-		if (AEInputCheckCurr(AEVK_LEFT))
-		{
-			spShip->dirCurr += SHIP_ROT_SPEED * (float)(AEFrameRateControllerGetFrameTime());
-			spShip->dirCurr = AEWrap(spShip->dirCurr, -PI, PI);
-		}
-
-		if (AEInputCheckCurr(AEVK_RIGHT))
-		{
-			spShip->dirCurr -= SHIP_ROT_SPEED * (float)(AEFrameRateControllerGetFrameTime());
-			spShip->dirCurr = AEWrap(spShip->dirCurr, -PI, PI);
-		}
-
-
-		// Shoot a bullet if space is triggered (Create a new object instance)
-		if (AEInputCheckTriggered(AEVK_SPACE))
-		{
-			// Get the bullet's direction according to the ship's direction
-			// Set the velocity
-			AEVec2 vel;
-			AEVec2Set(&vel, cosf(spShip->dirCurr), sinf(spShip->dirCurr));
-			vel.x = vel.x * BULLET_SPEED;
-			vel.y = vel.y * BULLET_SPEED;
-
-			// Create an instance
-			gameObjInstCreate(TYPE_BULLET, 3.0f, &spShip->posCurr, &vel, 0.0f);
-		}
-	}
-	
 	// ======================================================
 	// update physics of all active game object instances
 	//  -- Get the AABB bounding rectangle of every active instance:
@@ -322,7 +213,6 @@ void GameStateAsteroidsUpdate(void)
 	// ======================================================
 
 	for (unsigned long i = 0; i < GAME_OBJ_INST_NUM_MAX; i++)
-
 	{
 
 		GameObjInst* pInst = sGameObjInstList + i;
@@ -347,34 +237,11 @@ void GameStateAsteroidsUpdate(void)
 				pInst->posCurr = zero;
 			}
 		}
-
 	}
 	
 	// ====================
 	// check for collision
 	// ====================
-
-	/*
-	for each object instance: oi1
-		if oi1 is not active
-			skip
-
-		if oi1 is an asteroid
-			for each object instance oi2
-				if(oi2 is not active or oi2 is an asteroid)
-					skip
-
-				if(oi2 is the ship)
-					Check for collision between ship and asteroids (Rectangle - Rectangle)
-					Update game behavior accordingly
-					Update "Object instances array"
-				else
-				if(oi2 is a bullet)
-					Check for collision between bullet and asteroids (Rectangle - Rectangle)
-					Update game behavior accordingly
-					Update "Object instances array"
-	*/
-
 	for (unsigned long i = 0; i < GAME_OBJ_INST_NUM_MAX; i++)
 	{
 		GameObjInst* pInst = sGameObjInstList + i;
@@ -388,54 +255,22 @@ void GameStateAsteroidsUpdate(void)
 				GameObjInst* pInst2 = sGameObjInstList + x;
 				if ((pInst2->flag & FLAG_ACTIVE) == 0)
 					continue;
-				if (sShipLives >= 0 && sScore < 5000) {
-					if (pInst2->pObject->type == TYPE_SHIP) {		
-						if (CollisionIntersection_RectRect(pInst->boundingBox, pInst->velCurr, pInst2->boundingBox, pInst2->velCurr)) {
-							gameObjInstDestroy(pInst);
-							sShipLives--;
-							sScore += 100;
 
-							//Reset Ship Position
-							AEVec2 zero = { 0,0 };
-							pInst2->velCurr = zero;
-							pInst2->posCurr = zero;
-
-							onValueChange = true;
-
-							//Spawn two new astroids
-							AEVec2 asteroidVelocity;
-							AEVec2 asteroidPos;
-							for (int p = 0; p < 2; p++) {
-								asteroidVelocity = { -80 + static_cast<float>(rand()) * static_cast<float>(80.0f - (-80.0f)) / RAND_MAX, -80.0f + static_cast<float>(rand()) * static_cast<float>(80.0f - (-80.0f)) / RAND_MAX };
-								asteroidPos = { AEGfxGetWinMinX() - 50.0f, ((std::rand() % static_cast<int>((AEGfxGetWinMinY() - AEGfxGetWinMaxY() + 1)) + AEGfxGetWinMinY())) };
-								gameObjInstCreate(TYPE_ASTEROID, static_cast<float>(std::rand() % (80 - 15 + 1) + 15), &asteroidPos, &asteroidVelocity, 0.0f);
-							}
-						}
-					}
-				}
-				
-				if (pInst2->pObject->type == TYPE_BULLET) {
+				if (pInst2->pObject->type == TYPE_SHIP) {		
 					if (CollisionIntersection_RectRect(pInst->boundingBox, pInst->velCurr, pInst2->boundingBox, pInst2->velCurr)) {
-						sScore += 100;
-						onValueChange = true;
 						gameObjInstDestroy(pInst);
-						gameObjInstDestroy(pInst2);
 
-						//Spawn two new astroids
-						AEVec2 asteroidVelocity;
-						AEVec2 asteroidPos;
-						for (int p = 0; p < 2; p++) {
-							asteroidVelocity = { -80 + static_cast<float>(rand()) * static_cast<float>(80.0f - (-80.0f)) / RAND_MAX, -80.0f + static_cast<float>(rand()) * static_cast<float>(80.0f - (-80.0f)) / RAND_MAX };
-							asteroidPos = { AEGfxGetWinMinX() - 50.0f, ((std::rand() % static_cast<int>((AEGfxGetWinMinY() - AEGfxGetWinMaxY() + 1)) + AEGfxGetWinMinY())) };
-							gameObjInstCreate(TYPE_ASTEROID, static_cast<float>(std::rand() % (80 - 15 + 1) + 15), &asteroidPos, &asteroidVelocity, 0.0f);
-						}
+						//Reset Ship Position
+						AEVec2 zero = { 0,0 };
+						pInst2->velCurr = zero;
+						pInst2->posCurr = zero;
+
+						onValueChange = true;
 					}
 				}
 			}
 		}
 	}
-
-
 
 	// ===================================
 	// update active game object instances
@@ -482,7 +317,6 @@ void GameStateAsteroidsUpdate(void)
 		}
 	}
 	
-
 	// =====================================
 	// calculate the matrix for all objects
 	// =====================================
@@ -513,6 +347,27 @@ void GameStateAsteroidsUpdate(void)
 		// Concat the matrices (TRS)
 		AEMtx33Concat(&pInst->transform, &rot, &scale);
 		AEMtx33Concat(&pInst->transform, &trans, &pInst->transform);
+	}
+
+	// ========================================
+	// send new position information to clients
+	// ========================================
+	// Send Position Info to client
+	for (int x{}; x < MAX_CLIENTS; ++x) {
+		for (int i{}; i < currentAliveObjects; ++i) {
+			int clientAddrLen = sizeof(ClientSocket[i]);
+			SERVER_MESSAGE_FORMAT toSend{};
+			toSend.ObjectID = i;
+			toSend.position = sGameObjInstList[i].posCurr;
+			toSend.dirCurr = sGameObjInstList[i].dirCurr;
+
+			int errorCode = sendto(listenerSocket,
+				reinterpret_cast<const char*>(&toSend),
+				sizeof(SERVER_MESSAGE_FORMAT),
+				0,
+				reinterpret_cast<sockaddr*>(&ClientSocket[i]),
+				clientAddrLen);
+		}
 	}
 }
 
@@ -548,6 +403,7 @@ void GameStateAsteroidsDraw(void)
 	//You can replace this condition/variable by your own data.
 	//The idea is to display any of these variables/strings whenever a change in their value happens
 	//static bool onValueChange = true;
+	/*
 	if(onValueChange)
 	{
 		sprintf_s(strBuffer, "Score: %d", sScore);
@@ -571,6 +427,7 @@ void GameStateAsteroidsDraw(void)
 
 		onValueChange = false;
 	}
+	*/
 }
 
 /******************************************************************************/

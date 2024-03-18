@@ -18,25 +18,6 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include <cstdlib>
 #include <ctime>
 
-/******************************************************************************/
-/*!
-	Defines
-*/
-/******************************************************************************/
-const unsigned int	GAME_OBJ_NUM_MAX			= 32;						// The total number of different objects (Shapes)
-const unsigned int	GAME_OBJ_INST_NUM_MAX	= 2048;					// The total number of different game object instances
-
-
-const unsigned int	SHIP_INITIAL_NUM			= 3;						// initial number of ship lives
-const float					SHIP_SIZE							= 16.0f;				// ship size
-const float					SHIP_ACCEL_FORWARD		= 60.0f;				// ship forward acceleration (in m/s^2)
-const float					SHIP_ACCEL_BACKWARD		= 60.0f;				// ship backward acceleration (in m/s^2)
-const float					SHIP_ROT_SPEED				= (2.0f * PI);	// ship rotation speed (degree/second)
-
-const float					BULLET_SPEED					= 150.0f;				// bullet speed (m/s)
-
-const float         BOUNDING_RECT_SIZE    = 1.0f;         // this is the normalized bounding rectangle (width and height) sizes - AABB collision data
-
 // -----------------------------------------------------------------------------
 enum TYPE
 {
@@ -54,37 +35,6 @@ const unsigned long FLAG_ACTIVE				= 0x00000001;
 
 /******************************************************************************/
 /*!
-	Struct/Class Definitions
-*/
-/******************************************************************************/
-
-//Game object structure
-struct GameObj
-{
-	unsigned long		type;		// object type
-	AEGfxVertexList *	pMesh;		// This will hold the triangles which will form the shape of the object
-};
-
-// ---------------------------------------------------------------------------
-
-//Game object instance structure
-struct GameObjInst
-{
-	GameObj *			pObject;	// pointer to the 'original' shape
-	unsigned long		flag;		// bit flag or-ed together
-	float				scale;		// scaling value of the object instance
-	AEVec2				posCurr;	// object current position
-	AEVec2				velCurr;	// object current velocity
-	float				dirCurr;	// object current direction
-	AEMtx33				transform;	// object transformation matrix: Each frame, 
-									// calculate the object instance's transformation matrix and save it here
-
-	//void				(*pfUpdate)(void);
-	//void				(*pfDraw)(void);
-};
-
-/******************************************************************************/
-/*!
 	Static Variables
 */
 /******************************************************************************/
@@ -94,7 +44,7 @@ static GameObj				sGameObjList[GAME_OBJ_NUM_MAX];				// Each element in this arr
 static unsigned long		sGameObjNum;								// The number of defined game objects
 
 // list of object instances
-static GameObjInst			sGameObjInstList[GAME_OBJ_INST_NUM_MAX];	// Each element in this array represents a unique game object instance (sprite)
+GameObjInst			sGameObjInstList[GAME_OBJ_INST_NUM_MAX];	// Each element in this array represents a unique game object instance (sprite)
 static unsigned long		sGameObjInstNum;							// The number of used game object instances
 
 // pointer to the ship object
@@ -206,8 +156,9 @@ void GameStateAsteroidsLoad(void)
 void GameStateAsteroidsInit(void)
 {
 	// Create the main ship
+	// Ship ID 0
 	spShip = gameObjInstCreate(TYPE_SHIP, SHIP_SIZE, nullptr, nullptr, 0.0f);
-	AE_ASSERT(spShip);	
+	AE_ASSERT(spShip);
 	
 	// Create astroids
 
@@ -259,13 +210,28 @@ void GameStateAsteroidsUpdate(void)
 	// ===================================================
 	// update active game object instances based on server
 	// ===================================================
-	
+	// Receive Position Information from Server
+	/*
+	char buffer[sizeof(SERVER_MESSAGE_FORMAT)];
+	sockaddr_in servAddr;
+	int servAddrLen = sizeof(servAddr);
+
+	int bytesRead = recvfrom(clientSocket, buffer, sizeof(buffer), 0,
+		reinterpret_cast<sockaddr*>(&servAddr), &servAddrLen);
+	if (bytesRead == SOCKET_ERROR) {
+		std::cerr << "recvfrom() failed: " << WSAGetLastError() << std::endl;
+	}
+
+	SERVER_MESSAGE_FORMAT recv{ *reinterpret_cast<SERVER_MESSAGE_FORMAT*>(buffer) };
+	sGameObjInstList[recv.ObjectID].posCurr = recv.position;
+	*/
 
 
 	// =====================================
 	// calculate the matrix for all objects
 	// =====================================
 
+	std::lock_guard<std::mutex> lock(GAME_OBJECT_LIST_MUTEX);
 	for (unsigned long i = 0; i < GAME_OBJ_INST_NUM_MAX; i++)
 	{
 		GameObjInst * pInst = sGameObjInstList + i;

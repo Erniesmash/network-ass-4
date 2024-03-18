@@ -24,6 +24,7 @@ std::string serverPort;
 addrinfo* serverInfo;
 SOCKET clientSocket;
 int assignedShipID;
+std::mutex GAME_OBJECT_LIST_MUTEX;
 
 /******************************************************************************/
 /*!
@@ -60,6 +61,8 @@ int WINAPI WinMain(_In_ HINSTANCE instanceH, _In_opt_ HINSTANCE prevInstanceH, _
 	if (ret) {
 		return ret;
 	}
+
+	std::thread receiveThread(ReceiveServerMessages, clientSocket);
 
 	// Changing the window title
 	AESysSetWindowTitle("Asteroids Client");
@@ -166,7 +169,7 @@ int WinsockServerConnection() {
 	}
 
 	// Send a test message
-	const char* message = "Hello, server!";
+	const char* message = "Client Connection";
 	errorCode = sendto(clientSocket, message, strlen(message), 0, serverInfo->ai_addr, static_cast<int>(serverInfo->ai_addrlen));
 	if (errorCode == SOCKET_ERROR) {
 		std::cerr << "sendto() failed: " << WSAGetLastError() << std::endl;
@@ -179,7 +182,7 @@ int WinsockServerConnection() {
 	std::cout << "Message sent successfully." << std::endl;
 
 	// Receive Ship ID from server
-	char buffer[sizeof(SERVER_MESSAGE_FORMAT)];
+	char buffer[sizeof(SERVER_INITIAL_MESSAGE_FORMAT)];
 	sockaddr_in servAddr;
 	int servAddrLen = sizeof(servAddr);
 
@@ -190,9 +193,31 @@ int WinsockServerConnection() {
 		return 1;
 	}
 
-	SERVER_MESSAGE_FORMAT recv{ *reinterpret_cast<SERVER_MESSAGE_FORMAT*>(buffer) };
+	SERVER_INITIAL_MESSAGE_FORMAT recv{ *reinterpret_cast<SERVER_INITIAL_MESSAGE_FORMAT*>(buffer) };
+	assignedShipID = recv.ShipID;
 
-	std::cout << "Received ID: " << recv.ShipID << std::endl;
+	std::cout << "Assigned ID: " << assignedShipID << std::endl;
 
 	return 0;
+}
+
+void ReceiveServerMessages(SOCKET clientSocket) {
+	while (true) {
+		char buffer[sizeof(SERVER_MESSAGE_FORMAT)];
+		sockaddr_in servAddr;
+		int servAddrLen = sizeof(servAddr);
+
+		int bytesRead = recvfrom(clientSocket, buffer, sizeof(buffer), 0,
+			reinterpret_cast<sockaddr*>(&servAddr), &servAddrLen);
+		if (bytesRead == SOCKET_ERROR) {
+			std::cerr << "recvfrom() failed: " << WSAGetLastError() << std::endl;
+		}
+
+		SERVER_MESSAGE_FORMAT recv{ *reinterpret_cast<SERVER_MESSAGE_FORMAT*>(buffer) };
+		//std::cout << "Object ID: " << recv.ObjectID << " Position: " << recv.position.x << " " << recv.position.y << "\n";
+
+		std::lock_guard<std::mutex> lock(GAME_OBJECT_LIST_MUTEX);
+		sGameObjInstList[recv.ObjectID].posCurr = recv.position;
+		sGameObjInstList[recv.ObjectID].dirCurr = recv.dirCurr;
+	}
 }

@@ -37,8 +37,9 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include <iostream>
 #include <memory>
 #include <thread>
+#include <mutex>
 
-struct SERVER_MESSAGE_FORMAT
+struct SERVER_INITIAL_MESSAGE_FORMAT
 {
 	int ShipID;
 };
@@ -54,8 +55,10 @@ extern std::string serverPort;
 extern addrinfo* serverInfo;
 extern SOCKET clientSocket;
 extern int assignedShipID;
+extern std::mutex GAME_OBJECT_LIST_MUTEX;
 
 int WinsockServerConnection();
+void ReceiveServerMessages(SOCKET clientSocket);
 
 #endif
 

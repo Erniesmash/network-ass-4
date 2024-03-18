@@ -21,17 +21,6 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #define WIN32_LEAN_AND_MEAN
 #endif
 
-//------------------------------------
-// Globals
-
-extern float	g_dt;
-extern double	g_appTime;
-
-struct SERVER_MESSAGE_FORMAT
-{
-	int ShipID;
-};
-
 // ---------------------------------------------------------------------------
 // includes
 
@@ -49,6 +38,23 @@ struct SERVER_MESSAGE_FORMAT
 #include <iostream>
 #include <memory>
 #include <thread>
+#include <vector>
+#include <mutex>
+
+struct SERVER_INITIAL_MESSAGE_FORMAT
+{
+	int ShipID;
+};
+
+//------------------------------------
+// Globals
+
+extern float	g_dt;
+extern double	g_appTime;
+extern SOCKET listenerSocket;
+extern int constexpr MAX_CLIENTS{ 1 };
+extern std::mutex GAME_OBJECT_LIST_MUTEX;
+extern std::vector<sockaddr_in> ClientSocket;
 
 // ---------------------------------------------------------------------------
 // functions

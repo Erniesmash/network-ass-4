@@ -19,7 +19,11 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 float	  g_dt;
 double  g_appTime;
 
-int constexpr MAX_CLIENTS = 1;
+SOCKET listenerSocket;
+std::vector<sockaddr_in> ClientSocket;
+std::mutex GAME_OBJECT_LIST_MUTEX;
+
+void ReceiveClientMessages(SOCKET clientSocket);
 
 /******************************************************************************/
 /*!
@@ -55,6 +59,9 @@ int WINAPI WinMain(_In_ HINSTANCE instanceH, _In_opt_ HINSTANCE prevInstanceH, _
 	if (ret) {
 		return ret;
 	}
+
+	// Create recieve thread
+	std::thread receiveThread(ReceiveClientMessages, listenerSocket);
 
 	// Changing the window title
 	AESysSetWindowTitle("Asteroids Server");
@@ -159,7 +166,7 @@ int WinsockServerSetup() {
 	std::cout << std::endl;
 
 	// Create and Bind Socket for listening
-	SOCKET listenerSocket = socket(
+	listenerSocket = socket(
 		info->ai_family,
 		info->ai_socktype,
 		info->ai_protocol);
@@ -206,18 +213,72 @@ int WinsockServerSetup() {
 		std::cout << "Received datagram: " << buffer << std::endl;
 
 		// Send Ship ID to client
-		SERVER_MESSAGE_FORMAT toSend{};
+		SERVER_INITIAL_MESSAGE_FORMAT toSend{};
 		toSend.ShipID = currClient;
 
 		int errorCode = sendto(listenerSocket,
 			reinterpret_cast<const char*>(&toSend),
-			sizeof(SERVER_MESSAGE_FORMAT),
+			sizeof(SERVER_INITIAL_MESSAGE_FORMAT),
 			0,
 			reinterpret_cast<sockaddr*>(&clientAddr), 
 			clientAddrLen);
+
+		ClientSocket.push_back(clientAddr);
 
 		currClient++;
 	}
 
 	return 0;
+}
+
+void ReceiveClientMessages(SOCKET clientSocket) {
+	while (true) {
+		sockaddr_in clientAddr;
+		int clientAddrLen = sizeof(clientAddr);
+		char buffer[sizeof(CLIENT_MESSAGE_FORMAT)];
+
+		int bytesRead = recvfrom(clientSocket, buffer, sizeof(buffer), 0,
+			reinterpret_cast<sockaddr*>(&clientAddr), &clientAddrLen);
+		if (bytesRead == SOCKET_ERROR) {
+			std::cerr << "recvfrom() failed: " << WSAGetLastError() << std::endl;
+		}
+
+		CLIENT_MESSAGE_FORMAT recv{ *reinterpret_cast<CLIENT_MESSAGE_FORMAT*>(buffer) };
+		//std::cout << "Message Type: " << recv.MessageType << " Ship ID: " << recv.ShipID << "\n";
+
+		const float					SHIP_ACCEL_FORWARD = 60.0f;			// ship forward acceleration (in m/s^2)
+		const float					SHIP_ACCEL_BACKWARD = 60.0f;		// ship backward acceleration (in m/s^2)
+		const float					SHIP_ROT_SPEED = (2.0f * PI);		// ship rotation speed (degree/second)
+
+		std::lock_guard<std::mutex> lock(GAME_OBJECT_LIST_MUTEX);
+		if (recv.MessageType == static_cast<int>(MESSAGE_TYPE::TYPE_MOVEMENT_UP)) {
+			AEVec2 accel;
+			AEVec2Set(&accel, static_cast<f32>(cosf(sGameObjInstList[recv.ShipID].dirCurr)), 
+				static_cast<f32>(sinf(sGameObjInstList[recv.ShipID].dirCurr))); //normalized acceleration vector
+
+			accel = { accel.x * SHIP_ACCEL_FORWARD, accel.y * SHIP_ACCEL_FORWARD }; //full acceleration vector
+			sGameObjInstList[recv.ShipID].velCurr = { accel.x * static_cast<f32>(AEFrameRateControllerGetFrameTime()) + sGameObjInstList[recv.ShipID].velCurr.x,
+				accel.y * static_cast<f32>(AEFrameRateControllerGetFrameTime()) + sGameObjInstList[recv.ShipID].velCurr.y };
+			sGameObjInstList[recv.ShipID].velCurr = { sGameObjInstList[recv.ShipID].velCurr.x * static_cast<f32>(0.99), sGameObjInstList[recv.ShipID].velCurr.y * static_cast<f32>(0.99) };
+		}
+
+		if (recv.MessageType == static_cast<int>(MESSAGE_TYPE::TYPE_MOVEMENT_DOWN)) {
+			AEVec2 accel;
+			AEVec2Set(&accel, static_cast<f32>(-cosf(sGameObjInstList[recv.ShipID].dirCurr)), static_cast<f32>(-sinf(sGameObjInstList[recv.ShipID].dirCurr))); //normalized acceleration vector
+			accel = { accel.x * SHIP_ACCEL_FORWARD, accel.y * SHIP_ACCEL_FORWARD }; //full acceleration vector
+			sGameObjInstList[recv.ShipID].velCurr = { accel.x * static_cast<f32>(AEFrameRateControllerGetFrameTime()) + sGameObjInstList[recv.ShipID].velCurr.x,
+				accel.y * static_cast<f32>(AEFrameRateControllerGetFrameTime()) + sGameObjInstList[recv.ShipID].velCurr.y };
+			sGameObjInstList[recv.ShipID].velCurr = { sGameObjInstList[recv.ShipID].velCurr.x * static_cast<f32>(0.99), sGameObjInstList[recv.ShipID].velCurr.y * static_cast<f32>(0.99) };
+		}
+
+		if (recv.MessageType == static_cast<int>(MESSAGE_TYPE::TYPE_MOVEMENT_LEFT)) {
+			sGameObjInstList[recv.ShipID].dirCurr += SHIP_ROT_SPEED * (float)(AEFrameRateControllerGetFrameTime());
+			sGameObjInstList[recv.ShipID].dirCurr = AEWrap(sGameObjInstList[recv.ShipID].dirCurr, -PI, PI);
+		}
+
+		if (recv.MessageType == static_cast<int>(MESSAGE_TYPE::TYPE_MOVEMENT_RIGHT)) {
+			sGameObjInstList[recv.ShipID].dirCurr -= SHIP_ROT_SPEED * (float)(AEFrameRateControllerGetFrameTime());
+			sGameObjInstList[recv.ShipID].dirCurr = AEWrap(sGameObjInstList[recv.ShipID].dirCurr, -PI, PI);
+		}
+	}
 }
