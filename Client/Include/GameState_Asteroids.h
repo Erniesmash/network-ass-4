@@ -61,6 +61,16 @@ struct GameObjInst
 	// calculate the object instance's transformation matrix and save it here
 };
 
+enum TYPE
+{
+	// list of game object types
+	TYPE_SHIP = 0,
+	TYPE_BULLET,
+	TYPE_ASTEROID,
+	TYPE_NUM
+};
+
+
 enum MESSAGE_TYPE
 {
 	// list of possible message types
@@ -84,6 +94,23 @@ struct SERVER_MESSAGE_FORMAT
 	float dirCurr;
 };
 
+struct SHIP_OBJ_INFO
+{
+	int shipID;
+	int score;
+	int live;
+	AEVec2 position;
+	float dirCurr;
+};
+
+struct OTHER_OBJ_INFO
+{
+	int objID;
+	AEVec2 position;
+	float dirCurr;
+};
+
+
 // ---------------------------------------------------------------------------
 
 void GameStateAsteroidsLoad(void);
@@ -94,6 +121,7 @@ void GameStateAsteroidsFree(void);
 void GameStateAsteroidsUnload(void);
 
 void SendEventToServer(int shipID, MESSAGE_TYPE messageType);
+void gameObjInstSet(int id, unsigned long type, float scale, AEVec2* pPos, AEVec2* pVel, float dir);
 
 extern GameObjInst sGameObjInstList[GAME_OBJ_INST_NUM_MAX];
 

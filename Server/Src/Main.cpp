@@ -55,13 +55,9 @@ int WINAPI WinMain(_In_ HINSTANCE instanceH, _In_opt_ HINSTANCE prevInstanceH, _
 		return 1;
 	}
 
-	int ret{ WinsockServerSetup() };
-	if (ret) {
-		return ret;
-	}
 
-	// Create recieve thread
-	std::thread receiveThread(ReceiveClientMessages, listenerSocket);
+
+
 
 	// Changing the window title
 	AESysSetWindowTitle("Asteroids Server");
@@ -70,6 +66,9 @@ int WINAPI WinMain(_In_ HINSTANCE instanceH, _In_opt_ HINSTANCE prevInstanceH, _
 	AEGfxSetBackgroundColor(0.0f, 0.0f, 0.0f);
 
 	GameStateMgrInit(GS_ASTEROIDS);
+
+
+
 
 	while(gGameStateCurr != GS_QUIT)
 	{
@@ -81,9 +80,19 @@ int WINAPI WinMain(_In_ HINSTANCE instanceH, _In_opt_ HINSTANCE prevInstanceH, _
 		{
 			GameStateMgrUpdate();
 			GameStateLoad();
+
 		}
 		else
 			gGameStateNext = gGameStateCurr = gGameStatePrev;
+
+
+		int ret{ WinsockServerSetup() };
+		if (ret) {
+			return ret;
+		}
+
+		// Create recieve thread
+		std::thread receiveThread(ReceiveClientMessages, listenerSocket);
 
 		// Initialize the gamestate
 		GameStateInit();
@@ -202,6 +211,7 @@ int WinsockServerSetup() {
 
 	int currClient{};
 	while (currClient < MAX_CLIENTS) {
+		std::cout << "Waiting for Client\n";
 		int bytesRead = recvfrom(listenerSocket, buffer, sizeof(buffer), 0,
 			reinterpret_cast<sockaddr*>(&clientAddr), &clientAddrLen);
 		if (bytesRead == SOCKET_ERROR) {
@@ -212,9 +222,12 @@ int WinsockServerSetup() {
 
 		std::cout << "Received datagram: " << buffer << std::endl;
 
+		
+
 		// Send Ship ID to client
 		SERVER_INITIAL_MESSAGE_FORMAT toSend{};
-		toSend.ShipID = currClient;
+		toSend.ShipID = AddNewShip();
+		std::cout << "CREATED SHIP: " << toSend.ShipID << "\n";
 
 		int errorCode = sendto(listenerSocket,
 			reinterpret_cast<const char*>(&toSend),
@@ -224,14 +237,19 @@ int WinsockServerSetup() {
 			clientAddrLen);
 
 		ClientSocket.push_back(clientAddr);
-
 		currClient++;
+	
+		std::cout << "Added Client\n";
 	}
 
 	return 0;
 }
 
 void ReceiveClientMessages(SOCKET clientSocket) {
+	const float					SHIP_ACCEL_FORWARD = 60.0f;			// ship forward acceleration (in m/s^2)
+	const float					SHIP_ACCEL_BACKWARD = 60.0f;		// ship backward acceleration (in m/s^2)
+	const float					SHIP_ROT_SPEED = (2.0f * PI);		// ship rotation speed (degree/second)
+
 	while (true) {
 		sockaddr_in clientAddr;
 		int clientAddrLen = sizeof(clientAddr);
@@ -246,15 +264,15 @@ void ReceiveClientMessages(SOCKET clientSocket) {
 		CLIENT_MESSAGE_FORMAT recv{ *reinterpret_cast<CLIENT_MESSAGE_FORMAT*>(buffer) };
 		//std::cout << "Message Type: " << recv.MessageType << " Ship ID: " << recv.ShipID << "\n";
 
-		const float					SHIP_ACCEL_FORWARD = 60.0f;			// ship forward acceleration (in m/s^2)
-		const float					SHIP_ACCEL_BACKWARD = 60.0f;		// ship backward acceleration (in m/s^2)
-		const float					SHIP_ROT_SPEED = (2.0f * PI);		// ship rotation speed (degree/second)
 
 		std::lock_guard<std::mutex> lock(GAME_OBJECT_LIST_MUTEX);
 		if (recv.MessageType == static_cast<int>(MESSAGE_TYPE::TYPE_MOVEMENT_UP)) {
 			AEVec2 accel;
 			AEVec2Set(&accel, static_cast<f32>(cosf(sGameObjInstList[recv.ShipID].dirCurr)), 
 				static_cast<f32>(sinf(sGameObjInstList[recv.ShipID].dirCurr))); //normalized acceleration vector
+
+			if ((sGameObjInstList[recv.ShipID].flag & FLAG_ACTIVE) == 0)
+				std::cout << "SHIP NULL: " << recv.ShipID << "\n";
 
 			accel = { accel.x * SHIP_ACCEL_FORWARD, accel.y * SHIP_ACCEL_FORWARD }; //full acceleration vector
 			sGameObjInstList[recv.ShipID].velCurr = { accel.x * static_cast<f32>(AEFrameRateControllerGetFrameTime()) + sGameObjInstList[recv.ShipID].velCurr.x,

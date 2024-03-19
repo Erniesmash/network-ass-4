@@ -17,6 +17,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 
 int currentAliveObjects{};
 
+
 // -----------------------------------------------------------------------------
 enum TYPE
 {
@@ -30,7 +31,7 @@ enum TYPE
 
 // -----------------------------------------------------------------------------
 // object flag definition
-const unsigned long FLAG_ACTIVE				= 0x00000001;
+
 
 
 /******************************************************************************/
@@ -40,6 +41,8 @@ const unsigned long FLAG_ACTIVE				= 0x00000001;
 /******************************************************************************/
 
 // list of original object
+static std::vector<SHIP_OBJ> allShipInfo{};
+static std::vector<GameObjInst*> allOtherObjsInfo{};
 static GameObj				sGameObjList[GAME_OBJ_NUM_MAX];				// Each element in this array represents a unique game object (shape)
 static unsigned long		sGameObjNum;								// The number of defined game objects
 
@@ -59,7 +62,9 @@ static unsigned long		sScore;										// Current score
 static bool onValueChange = true;
 
 
+SHIP_OBJ_INFO::SHIP_OBJ_INFO(int sid, int s, int l, AEVec2 p, float d) :shipID{ sid }, score{ s }, live{ l },position { p }, dirCurr{ d } {}
 
+OTHER_OBJ_INFO::OTHER_OBJ_INFO(int oid, AEVec2 p, float d): objID{ oid }, position{ p }, dirCurr{ d } {}
 // ---------------------------------------------------------------------------
 
 // functions to create/destroy a game object instance
@@ -157,11 +162,11 @@ void GameStateAsteroidsInit(void)
 {
 	// create the main ship
 
-	// Ship ID 0
-	spShip = gameObjInstCreate(TYPE_SHIP, SHIP_SIZE, nullptr, nullptr, 0.0f);
-	AE_ASSERT(spShip);	
-	currentAliveObjects++;
-	
+	//// Ship ID 0
+/*	spShip = gameObjInstCreate(TYPE_SHIP, SHIP_SIZE, nullptr, nullptr, 0.0f);
+	AE_ASSERT(spShip);*/	
+	//currentAliveObjects++;
+	//
 	// CREATE THE INITIAL ASTEROIDS INSTANCES USING THE "gameObjInstCreate" FUNCTION
 	/*
 	AEVec2 asteroidVelocity;
@@ -180,8 +185,28 @@ void GameStateAsteroidsInit(void)
 	*/
 
 	// reset the score and the number of ships
-	sScore      = 0;
-	sShipLives  = SHIP_INITIAL_NUM;
+	//sScore      = 0;
+	//sShipLives  = 0;
+}
+
+
+int AddNewShip()
+{
+
+	std::lock_guard<std::mutex> lock(GAME_OBJECT_LIST_MUTEX);
+	// Add a new SHip
+	GameObjInst* newShipInst = gameObjInstCreate(TYPE_SHIP, SHIP_SIZE, nullptr, nullptr, 0.0f);	
+	AE_ASSERT(newShipInst);
+	currentAliveObjects++;
+
+	unsigned int shipID = newShipInst - sGameObjInstList;
+	SHIP_OBJ newShipData{};
+	newShipData.objectID = static_cast<int>(shipID);
+	newShipData.shipLive = 3;
+	allShipInfo.push_back(newShipData);
+	return static_cast<int>(shipID);
+
+ //reset the score and the number of ship
 }
 
 /******************************************************************************/
@@ -199,8 +224,7 @@ void GameStateAsteroidsUpdate(void)
 	// =========================
 	// update according to input
 	// =========================
-	// Done in main
-
+	// Done in main172.28.80.1
 	std::lock_guard<std::mutex> lock(GAME_OBJECT_LIST_MUTEX);
 
 	// ======================================================
@@ -353,7 +377,60 @@ void GameStateAsteroidsUpdate(void)
 	// send new position information to clients
 	// ========================================
 	// Send Position Info to client
-	for (int x{}; x < MAX_CLIENTS; ++x) {
+
+	//Generate the Message 
+	//static std::vector<SHIP_OBJ> allShipInfo{};
+	//static std::vector<GameObj*> allOtherObjsInfo{};
+	std::vector<SHIP_OBJ_INFO> shipMsg{};
+	std::vector<OTHER_OBJ_INFO> otherObjMsg{};
+	int numofShips{};
+	int numofObjs{ static_cast<int>(allOtherObjsInfo.size()) };
+	//std::cout << allShipInfo.size() << "::num Of Ships Created\n";
+
+	for (const SHIP_OBJ& s : allShipInfo)
+	{
+		if (s.isDead)
+			continue;
+		++numofShips;
+		shipMsg.emplace_back(s.objectID, s.score,s.shipLive ,sGameObjInstList[s.objectID].posCurr, sGameObjInstList[s.objectID].dirCurr);
+	}
+
+	for (GameObjInst* o : allOtherObjsInfo)
+	{
+		otherObjMsg.emplace_back(o-sGameObjInstList, o->posCurr, o->dirCurr);
+	}
+
+	size_t sizeNeeded = (2 * sizeof(int)) + (shipMsg.size() * sizeof(SHIP_OBJ_INFO)) + (otherObjMsg.size() * sizeof(OTHER_OBJ_INFO));
+	std::string text(sizeNeeded, ' ');
+	memcpy(&text[0], &numofShips, sizeof(int));
+	memcpy(&text[sizeof(int)], &numofObjs, sizeof(int));
+	for (int x{ 0 }; x < numofShips; ++x)
+	{
+		memcpy(&text[(2 * sizeof(int)) + (x* sizeof(SHIP_OBJ_INFO))], &shipMsg[x], sizeof(SHIP_OBJ_INFO));
+	}
+
+	for (int x{ 0 }; x < numofObjs; ++x)
+	{
+		memcpy(&text[(2 * sizeof(int)) + (shipMsg.size() * sizeof(SHIP_OBJ_INFO)) + (x * sizeof(SHIP_OBJ_INFO))], &otherObjMsg[x], sizeof(OTHER_OBJ_INFO));
+	}
+
+
+	for (size_t i{0};i<ClientSocket.size();++i)
+	{
+		int clientAddrLen = sizeof(ClientSocket[i]);
+		int errorCode = sendto(listenerSocket,
+			text.c_str(),
+			static_cast<int>(text.size()),
+			0,
+			reinterpret_cast<sockaddr*>(&ClientSocket[i]),
+			clientAddrLen);
+
+		if (errorCode == SOCKET_ERROR) {
+			std::cerr << "sendto() failed: " << WSAGetLastError() << std::endl;
+		}
+	}
+
+	/*for (int x{}; x < MAX_CLIENTS; ++x) {
 		for (int i{}; i < currentAliveObjects; ++i) {
 			int clientAddrLen = sizeof(ClientSocket[i]);
 			SERVER_MESSAGE_FORMAT toSend{};
@@ -361,14 +438,9 @@ void GameStateAsteroidsUpdate(void)
 			toSend.position = sGameObjInstList[i].posCurr;
 			toSend.dirCurr = sGameObjInstList[i].dirCurr;
 
-			int errorCode = sendto(listenerSocket,
-				reinterpret_cast<const char*>(&toSend),
-				sizeof(SERVER_MESSAGE_FORMAT),
-				0,
-				reinterpret_cast<sockaddr*>(&ClientSocket[i]),
-				clientAddrLen);
+		
 		}
-	}
+	}*/
 }
 
 /******************************************************************************/
@@ -478,6 +550,32 @@ void GameStateAsteroidsUnload(void)
 	}
 }
 
+
+void gameObjInstSet(int id, unsigned long type,
+	float scale,
+	AEVec2* pPos,
+	AEVec2* pVel,
+	float dir)
+{
+
+	AEVec2 zero;
+	AEVec2Zero(&zero);
+
+	GameObjInst* pInst = sGameObjInstList + id;
+
+	// check if current instance is not used
+	// it is not used => use it to create the new instance
+	pInst->pObject = sGameObjList + type;
+	pInst->flag = FLAG_ACTIVE;
+	pInst->scale = scale;
+	pInst->posCurr = pPos ? *pPos : zero;
+	pInst->velCurr = pVel ? *pVel : zero;
+	pInst->dirCurr = dir;
+
+	if (pInst->pObject == nullptr)
+		std::cout << "ISNULL\n";
+}
+
 /******************************************************************************/
 /*!
 	Creates game objects
@@ -491,8 +589,8 @@ GameObjInst * gameObjInstCreate(unsigned long type,
 {
 	AEVec2 zero;
 	AEVec2Zero(&zero);
-
-	AE_ASSERT_PARM(type < sGameObjNum);
+	std::cout << type << "\n";
+	//AE_ASSERT_PARM(type < sGameObjNum);
 	
 	// loop through the object instance list to find a non-used object instance
 	for (unsigned long i = 0; i < GAME_OBJ_INST_NUM_MAX; i++)

@@ -19,14 +19,6 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include <ctime>
 
 // -----------------------------------------------------------------------------
-enum TYPE
-{
-	// list of game object types
-	TYPE_SHIP = 0, 
-	TYPE_BULLET,
-	TYPE_ASTEROID,
-	TYPE_NUM
-};
 
 // -----------------------------------------------------------------------------
 // object flag definition
@@ -157,9 +149,9 @@ void GameStateAsteroidsInit(void)
 {
 	// Create the main ship
 	// Ship ID 0
-	spShip = gameObjInstCreate(TYPE_SHIP, SHIP_SIZE, nullptr, nullptr, 0.0f);
-	AE_ASSERT(spShip);
-	
+	//spShip = gameObjInstCreate(TYPE_SHIP, SHIP_SIZE, nullptr, nullptr, 0.0f);
+	//AE_ASSERT(spShip);
+	//
 	// Create astroids
 
 	// Creates initial bullet instance
@@ -167,8 +159,8 @@ void GameStateAsteroidsInit(void)
 	//gameObjInstDestroy(bullet);
 	
 	// reset the score and the number of ships
-	sScore      = 0;
-	sShipLives  = SHIP_INITIAL_NUM;
+	//sScore      = 0;
+	//sShipLives  = SHIP_INITIAL_NUM;
 }
 
 /******************************************************************************/
@@ -362,6 +354,32 @@ void GameStateAsteroidsUnload(void)
 			break;
 		}
 	}
+}
+
+
+void gameObjInstSet(int id, unsigned long type,
+	float scale,
+	AEVec2* pPos,
+	AEVec2* pVel,
+	float dir)
+{
+
+	AEVec2 zero;
+	AEVec2Zero(&zero);
+
+	GameObjInst* pInst = sGameObjInstList + id;
+
+	// check if current instance is not used
+	// it is not used => use it to create the new instance
+	pInst->pObject = sGameObjList + type;
+	pInst->flag = FLAG_ACTIVE;
+	pInst->scale = scale;
+	pInst->posCurr = pPos ? *pPos : zero;
+	pInst->velCurr = pVel ? *pVel : zero;
+	pInst->dirCurr = dir;
+
+	if (pInst->pObject == nullptr)
+		std::cout << "ISNULL\n";
 }
 
 /******************************************************************************/

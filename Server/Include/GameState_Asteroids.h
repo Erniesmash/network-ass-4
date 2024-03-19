@@ -19,6 +19,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "main.h"
 #include <iostream>
 #include <cstdlib>
+#include <vector>
 #include <ctime>
 #include "Collision.h"
 
@@ -56,7 +57,7 @@ struct GameObjInst
 /******************************************************************************/
 const unsigned int	GAME_OBJ_NUM_MAX = 32;					// The total number of different objects (Shapes)
 const unsigned int	GAME_OBJ_INST_NUM_MAX = 2048;		// The total number of different game object instances
-
+const unsigned long FLAG_ACTIVE = 0x00000001;
 
 const unsigned int	SHIP_INITIAL_NUM = 3;						// initial number of ship lives
 const float					SHIP_SIZE = 16.0f;							// ship size
@@ -78,12 +79,34 @@ enum MESSAGE_TYPE
 	TYPE_SHOOT
 };
 
-struct SERVER_MESSAGE_FORMAT
+struct SHIP_OBJ
 {
-	int ObjectID;
+	int objectID;
+	int shipLive;
+	int score;
+	bool isDead;
+};
+
+
+struct SHIP_OBJ_INFO
+{
+	int shipID;
+	int score;
+	int live;
 	AEVec2 position;
 	float dirCurr;
+	SHIP_OBJ_INFO(int sid, int s, int l, AEVec2 p, float d);
 };
+
+struct OTHER_OBJ_INFO
+{
+	int objID;
+	AEVec2 position;
+	float dirCurr;
+	OTHER_OBJ_INFO(int oid,AEVec2 p, float d);
+};
+
+
 
 struct CLIENT_MESSAGE_FORMAT
 {
@@ -99,8 +122,10 @@ void GameStateAsteroidsUpdate(void);
 void GameStateAsteroidsDraw(void);
 void GameStateAsteroidsFree(void);
 void GameStateAsteroidsUnload(void);
-
+int AddNewShip();
+void gameObjInstSet(int id, unsigned long type, float scale, AEVec2* pPos, AEVec2* pVel, float dir);
 extern GameObjInst sGameObjInstList[GAME_OBJ_INST_NUM_MAX];
+
 
 // ---------------------------------------------------------------------------
 
