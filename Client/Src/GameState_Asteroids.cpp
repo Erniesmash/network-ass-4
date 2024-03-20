@@ -198,7 +198,6 @@ void GameStateAsteroidsUpdate(void)
 	{
 		SendEventToServer(assignedShipID, MESSAGE_TYPE::TYPE_SHOOT);
 	}
-	
 	// ===================================================
 	// update active game object instances based on server
 	// ===================================================

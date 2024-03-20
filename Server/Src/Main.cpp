@@ -13,6 +13,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
  /******************************************************************************/
 
 #include "main.h"
+#include "GameState_Asteroids.h"
 
 // ---------------------------------------------------------------------------
 // Globals
@@ -239,7 +240,7 @@ int WinsockServerSetup() {
 		ClientSocket.push_back(clientAddr);
 		currClient++;
 	
-		std::cout << "Added Client\n";
+		std::cout << "Added Client at port " << ntohs(clientAddr.sin_port) << "\n";
 	}
 
 	return 0;
@@ -266,6 +267,14 @@ void ReceiveClientMessages(SOCKET clientSocket) {
 
 
 		std::lock_guard<std::mutex> lock(GAME_OBJECT_LIST_MUTEX);
+
+		if (recv.MessageType == static_cast<int>(MESSAGE_TYPE::TYPE_SHOOT)) {
+			
+			float scale = BULLET_SPEED;
+			AEVec2 velnew = { cosf(sGameObjInstList[recv.ShipID].dirCurr) * scale, sinf(sGameObjInstList[recv.ShipID].dirCurr) * scale };
+			gameObjInstCreate(GAMEOBJ_TYPE::TYPE_BULLET, BULLET_SIZE, &(sGameObjInstList[recv.ShipID].posCurr), &(velnew), sGameObjInstList[recv.ShipID].dirCurr, true);
+			
+		}
 		if (recv.MessageType == static_cast<int>(MESSAGE_TYPE::TYPE_MOVEMENT_UP)) {
 			AEVec2 accel;
 			AEVec2Set(&accel, static_cast<f32>(cosf(sGameObjInstList[recv.ShipID].dirCurr)), 

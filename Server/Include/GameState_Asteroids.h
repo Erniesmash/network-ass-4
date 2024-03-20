@@ -59,12 +59,13 @@ const unsigned int	GAME_OBJ_NUM_MAX = 32;					// The total number of different o
 const unsigned int	GAME_OBJ_INST_NUM_MAX = 2048;		// The total number of different game object instances
 const unsigned long FLAG_ACTIVE = 0x00000001;
 
-const unsigned int	SHIP_INITIAL_NUM = 3;						// initial number of ship lives
+const unsigned int	SHIP_INITIAL_NUM = 3;						// initial number of ship 
 const float					SHIP_SIZE = 16.0f;							// ship size
 const float					SHIP_ACCEL_FORWARD = 60.0f;			// ship forward acceleration (in m/s^2)
 const float					SHIP_ACCEL_BACKWARD = 60.0f;		// ship backward acceleration (in m/s^2)
 const float					SHIP_ROT_SPEED = (2.0f * PI);		// ship rotation speed (degree/second)
 
+const float					BULLET_SIZE = 2.0f;
 const float					BULLET_SPEED = 150.0f;					// bullet speed (m/s)
 
 const float         BOUNDING_RECT_SIZE = 1.0f;      // this is the normalized bounding rectangle (width and height) sizes - AABB collision data
@@ -78,7 +79,15 @@ enum MESSAGE_TYPE
 	TYPE_MOVEMENT_RIGHT,
 	TYPE_SHOOT
 };
+enum GAMEOBJ_TYPE
+{
+	// list of game object types
+	TYPE_SHIP = 0,
+	TYPE_BULLET,
+	TYPE_ASTEROID,
 
+	TYPE_NUM
+};
 struct SHIP_OBJ
 {
 	int objectID;
@@ -103,7 +112,8 @@ struct OTHER_OBJ_INFO
 	int objID;
 	AEVec2 position;
 	float dirCurr;
-	OTHER_OBJ_INFO(int oid,AEVec2 p, float d);
+	GAMEOBJ_TYPE objtype;
+	OTHER_OBJ_INFO(int oid,AEVec2 p, float d, GAMEOBJ_TYPE t);
 };
 
 
@@ -124,6 +134,9 @@ void GameStateAsteroidsFree(void);
 void GameStateAsteroidsUnload(void);
 int AddNewShip();
 void gameObjInstSet(int id, unsigned long type, float scale, AEVec2* pPos, AEVec2* pVel, float dir);
+GameObjInst* gameObjInstCreate(unsigned long type, float scale, AEVec2* pPos, AEVec2* pVel, float dir, bool addToAllOtherObjs = false);
+void gameObjInstDestroy(GameObjInst* pInst);
+
 extern GameObjInst sGameObjInstList[GAME_OBJ_INST_NUM_MAX];
 
 

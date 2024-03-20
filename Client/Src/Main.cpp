@@ -258,7 +258,10 @@ void ReceiveServerMessages(SOCKET clientSocket) {
 		{
 			memcpy(&otherObj, &buffer[8 + (numOfShips * sizeof(SHIP_OBJ_INFO)) + (i*sizeof(OTHER_OBJ_INFO))], sizeof(OTHER_OBJ_INFO));
 			std::lock_guard<std::mutex> lock(GAME_OBJECT_LIST_MUTEX);
-			gameObjInstSet(otherObj.objID, TYPE_SHIP, SHIP_SIZE, &otherObj.position, nullptr, otherObj.dirCurr);
+			if (otherObj.objID == GAMEOBJ_TYPE::TYPE_BULLET)
+				gameObjInstSet(otherObj.objID, otherObj.objtype, BULLET_SIZE, &otherObj.position, nullptr, otherObj.dirCurr);
+			else 
+				gameObjInstSet(otherObj.objID, otherObj.objtype, SHIP_SIZE, &otherObj.position, nullptr, otherObj.dirCurr);
 			//sGameObjInstList[otherObj.objID].posCurr = otherObj.position;
 			//sGameObjInstList[otherObj.objID].dirCurr = otherObj.dirCurr;
 			//sGameObjInstList[otherObj.objID].flag = 1;

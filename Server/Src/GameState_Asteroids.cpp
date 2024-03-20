@@ -19,15 +19,7 @@ int currentAliveObjects{};
 
 
 // -----------------------------------------------------------------------------
-enum TYPE
-{
-	// list of game object types
-	TYPE_SHIP = 0, 
-	TYPE_BULLET,
-	TYPE_ASTEROID,
 
-	TYPE_NUM
-};
 
 // -----------------------------------------------------------------------------
 // object flag definition
@@ -64,13 +56,10 @@ static bool onValueChange = true;
 
 SHIP_OBJ_INFO::SHIP_OBJ_INFO(int sid, int s, int l, AEVec2 p, float d) :shipID{ sid }, score{ s }, live{ l },position { p }, dirCurr{ d } {}
 
-OTHER_OBJ_INFO::OTHER_OBJ_INFO(int oid, AEVec2 p, float d): objID{ oid }, position{ p }, dirCurr{ d } {}
+OTHER_OBJ_INFO::OTHER_OBJ_INFO(int oid, AEVec2 p, float d, GAMEOBJ_TYPE t) : objID{ oid }, position{ p }, dirCurr{ d }, objtype{t} {}
 // ---------------------------------------------------------------------------
 
 // functions to create/destroy a game object instance
-GameObjInst *		gameObjInstCreate (unsigned long type, float scale, 
-											   AEVec2 * pPos, AEVec2 * pVel, float dir);
-void					gameObjInstDestroy(GameObjInst * pInst);
 
 
 /******************************************************************************/
@@ -192,10 +181,10 @@ void GameStateAsteroidsInit(void)
 
 int AddNewShip()
 {
-
 	std::lock_guard<std::mutex> lock(GAME_OBJECT_LIST_MUTEX);
 	// Add a new SHip
 	GameObjInst* newShipInst = gameObjInstCreate(TYPE_SHIP, SHIP_SIZE, nullptr, nullptr, 0.0f);	
+	
 	AE_ASSERT(newShipInst);
 	currentAliveObjects++;
 
@@ -205,7 +194,6 @@ int AddNewShip()
 	newShipData.shipLive = 3;
 	allShipInfo.push_back(newShipData);
 	return static_cast<int>(shipID);
-
  //reset the score and the number of ship
 }
 
@@ -397,7 +385,8 @@ void GameStateAsteroidsUpdate(void)
 
 	for (GameObjInst* o : allOtherObjsInfo)
 	{
-		otherObjMsg.emplace_back(o-sGameObjInstList, o->posCurr, o->dirCurr);
+		long long idx = o - sGameObjInstList;
+		otherObjMsg.emplace_back(idx, o->posCurr, o->dirCurr, static_cast<GAMEOBJ_TYPE>(o->pObject->type));
 	}
 
 	size_t sizeNeeded = (2 * sizeof(int)) + (shipMsg.size() * sizeof(SHIP_OBJ_INFO)) + (otherObjMsg.size() * sizeof(OTHER_OBJ_INFO));
@@ -411,9 +400,8 @@ void GameStateAsteroidsUpdate(void)
 
 	for (int x{ 0 }; x < numofObjs; ++x)
 	{
-		memcpy(&text[(2 * sizeof(int)) + (shipMsg.size() * sizeof(SHIP_OBJ_INFO)) + (x * sizeof(SHIP_OBJ_INFO))], &otherObjMsg[x], sizeof(OTHER_OBJ_INFO));
+		memcpy(&text[(2 * sizeof(int)) + (shipMsg.size() * sizeof(SHIP_OBJ_INFO)) + (x * sizeof(OTHER_OBJ_INFO))], &otherObjMsg[x], sizeof(OTHER_OBJ_INFO));
 	}
-
 
 	for (size_t i{0};i<ClientSocket.size();++i)
 	{
@@ -585,7 +573,7 @@ GameObjInst * gameObjInstCreate(unsigned long type,
 							   float scale, 
 							   AEVec2 * pPos, 
 							   AEVec2 * pVel, 
-							   float dir)
+							   float dir, bool addToAllOtherObjs)
 {
 	AEVec2 zero;
 	AEVec2Zero(&zero);
@@ -609,6 +597,8 @@ GameObjInst * gameObjInstCreate(unsigned long type,
 			pInst->dirCurr	= dir;
 			
 			// return the newly created instance
+			if (addToAllOtherObjs)
+				allOtherObjsInfo.push_back(pInst);
 			return pInst;
 		}
 	}
@@ -627,7 +617,8 @@ void gameObjInstDestroy(GameObjInst * pInst)
 	// if instance is destroyed before, just return
 	if (pInst->flag == 0)
 		return;
-
+	allOtherObjsInfo.erase(std::remove(allOtherObjsInfo.begin(), allOtherObjsInfo.end(), pInst), allOtherObjsInfo.end());
 	// zero out the flag
 	pInst->flag = 0;
+	
 }
