@@ -55,10 +55,6 @@ int WINAPI WinMain(_In_ HINSTANCE instanceH, _In_opt_ HINSTANCE prevInstanceH, _
 		return 1;
 	}
 
-
-
-
-
 	// Changing the window title
 	AESysSetWindowTitle("Asteroids Server");
 
@@ -66,9 +62,6 @@ int WINAPI WinMain(_In_ HINSTANCE instanceH, _In_opt_ HINSTANCE prevInstanceH, _
 	AEGfxSetBackgroundColor(0.0f, 0.0f, 0.0f);
 
 	GameStateMgrInit(GS_ASTEROIDS);
-
-
-
 
 	while(gGameStateCurr != GS_QUIT)
 	{
@@ -91,11 +84,11 @@ int WINAPI WinMain(_In_ HINSTANCE instanceH, _In_opt_ HINSTANCE prevInstanceH, _
 			return ret;
 		}
 
-		// Create recieve thread
-		std::thread receiveThread(ReceiveClientMessages, listenerSocket);
-
 		// Initialize the gamestate
 		GameStateInit();
+
+		// Create recieve thread
+		std::thread receiveThread(ReceiveClientMessages, listenerSocket);
 
 		while(gGameStateCurr == gGameStateNext)
 		{
@@ -262,41 +255,52 @@ void ReceiveClientMessages(SOCKET clientSocket) {
 		}
 
 		CLIENT_MESSAGE_FORMAT recv{ *reinterpret_cast<CLIENT_MESSAGE_FORMAT*>(buffer) };
-		//std::cout << "Message Type: " << recv.MessageType << " Ship ID: " << recv.ShipID << "\n";
-
 
 		std::lock_guard<std::mutex> lock(GAME_OBJECT_LIST_MUTEX);
+		GameObjInst& currShip{ sGameObjInstList[recv.ShipID] };
+
 		if (recv.MessageType == static_cast<int>(MESSAGE_TYPE::TYPE_MOVEMENT_UP)) {
 			AEVec2 accel;
-			AEVec2Set(&accel, static_cast<f32>(cosf(sGameObjInstList[recv.ShipID].dirCurr)), 
-				static_cast<f32>(sinf(sGameObjInstList[recv.ShipID].dirCurr))); //normalized acceleration vector
+			AEVec2Set(&accel, static_cast<f32>(cosf(currShip.dirCurr)),
+				static_cast<f32>(sinf(currShip.dirCurr))); //normalized acceleration vector
 
-			if ((sGameObjInstList[recv.ShipID].flag & FLAG_ACTIVE) == 0)
+			if ((currShip.flag & FLAG_ACTIVE) == 0)
 				std::cout << "SHIP NULL: " << recv.ShipID << "\n";
 
 			accel = { accel.x * SHIP_ACCEL_FORWARD, accel.y * SHIP_ACCEL_FORWARD }; //full acceleration vector
-			sGameObjInstList[recv.ShipID].velCurr = { accel.x * static_cast<f32>(AEFrameRateControllerGetFrameTime()) + sGameObjInstList[recv.ShipID].velCurr.x,
-				accel.y * static_cast<f32>(AEFrameRateControllerGetFrameTime()) + sGameObjInstList[recv.ShipID].velCurr.y };
-			sGameObjInstList[recv.ShipID].velCurr = { sGameObjInstList[recv.ShipID].velCurr.x * static_cast<f32>(0.99), sGameObjInstList[recv.ShipID].velCurr.y * static_cast<f32>(0.99) };
+			currShip.velCurr = { accel.x * static_cast<f32>(AEFrameRateControllerGetFrameTime()) + currShip.velCurr.x,
+				accel.y * static_cast<f32>(AEFrameRateControllerGetFrameTime()) + currShip.velCurr.y };
+			currShip.velCurr = { currShip.velCurr.x * static_cast<f32>(0.99), currShip.velCurr.y * static_cast<f32>(0.99) };
 		}
 
 		if (recv.MessageType == static_cast<int>(MESSAGE_TYPE::TYPE_MOVEMENT_DOWN)) {
 			AEVec2 accel;
-			AEVec2Set(&accel, static_cast<f32>(-cosf(sGameObjInstList[recv.ShipID].dirCurr)), static_cast<f32>(-sinf(sGameObjInstList[recv.ShipID].dirCurr))); //normalized acceleration vector
+			AEVec2Set(&accel, static_cast<f32>(-cosf(currShip.dirCurr)), 
+				static_cast<f32>(-sinf(currShip.dirCurr))); //normalized acceleration vector
 			accel = { accel.x * SHIP_ACCEL_FORWARD, accel.y * SHIP_ACCEL_FORWARD }; //full acceleration vector
-			sGameObjInstList[recv.ShipID].velCurr = { accel.x * static_cast<f32>(AEFrameRateControllerGetFrameTime()) + sGameObjInstList[recv.ShipID].velCurr.x,
-				accel.y * static_cast<f32>(AEFrameRateControllerGetFrameTime()) + sGameObjInstList[recv.ShipID].velCurr.y };
-			sGameObjInstList[recv.ShipID].velCurr = { sGameObjInstList[recv.ShipID].velCurr.x * static_cast<f32>(0.99), sGameObjInstList[recv.ShipID].velCurr.y * static_cast<f32>(0.99) };
+			currShip.velCurr = { accel.x * static_cast<f32>(AEFrameRateControllerGetFrameTime()) + currShip.velCurr.x,
+				accel.y * static_cast<f32>(AEFrameRateControllerGetFrameTime()) + currShip.velCurr.y };
+			currShip.velCurr = { currShip.velCurr.x * static_cast<f32>(0.99), currShip.velCurr.y * static_cast<f32>(0.99) };
 		}
 
 		if (recv.MessageType == static_cast<int>(MESSAGE_TYPE::TYPE_MOVEMENT_LEFT)) {
-			sGameObjInstList[recv.ShipID].dirCurr += SHIP_ROT_SPEED * (float)(AEFrameRateControllerGetFrameTime());
-			sGameObjInstList[recv.ShipID].dirCurr = AEWrap(sGameObjInstList[recv.ShipID].dirCurr, -PI, PI);
+			currShip.dirCurr += SHIP_ROT_SPEED * (float)(AEFrameRateControllerGetFrameTime());
+			currShip.dirCurr = AEWrap(currShip.dirCurr, -PI, PI);
 		}
 
 		if (recv.MessageType == static_cast<int>(MESSAGE_TYPE::TYPE_MOVEMENT_RIGHT)) {
-			sGameObjInstList[recv.ShipID].dirCurr -= SHIP_ROT_SPEED * (float)(AEFrameRateControllerGetFrameTime());
-			sGameObjInstList[recv.ShipID].dirCurr = AEWrap(sGameObjInstList[recv.ShipID].dirCurr, -PI, PI);
+			currShip.dirCurr -= SHIP_ROT_SPEED * (float)(AEFrameRateControllerGetFrameTime());
+			currShip.dirCurr = AEWrap(currShip.dirCurr, -PI, PI);
+		}
+
+		if (recv.MessageType == static_cast<int>(MESSAGE_TYPE::TYPE_SHOOT)) {
+			AEVec2 vel;
+			AEVec2Set(&vel, cosf(currShip.dirCurr), sinf(currShip.dirCurr));
+			vel.x = vel.x * BULLET_SPEED;
+			vel.y = vel.y * BULLET_SPEED;
+
+			// Create an instance
+			FireBullet(currShip.posCurr, vel);
 		}
 	}
 }

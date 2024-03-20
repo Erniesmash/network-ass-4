@@ -242,8 +242,6 @@ void ReceiveServerMessages(SOCKET clientSocket) {
 
 			std::lock_guard<std::mutex> lock(GAME_OBJECT_LIST_MUTEX);
 			gameObjInstSet(shipInfo.shipID,TYPE_SHIP, SHIP_SIZE, &shipInfo.position, nullptr, shipInfo.dirCurr);
-			//sGameObjInstList[shipInfo.shipID].posCurr = shipInfo.position;
-			//sGameObjInstList[shipInfo.shipID].dirCurr = shipInfo.dirCurr;
 		
 #ifdef PrintMessage
 			std::cout << "Ship " << shipInfo.shipID << "\n";
@@ -258,10 +256,7 @@ void ReceiveServerMessages(SOCKET clientSocket) {
 		{
 			memcpy(&otherObj, &buffer[8 + (numOfShips * sizeof(SHIP_OBJ_INFO)) + (i*sizeof(OTHER_OBJ_INFO))], sizeof(OTHER_OBJ_INFO));
 			std::lock_guard<std::mutex> lock(GAME_OBJECT_LIST_MUTEX);
-			gameObjInstSet(otherObj.objID, TYPE_SHIP, SHIP_SIZE, &otherObj.position, nullptr, otherObj.dirCurr);
-			//sGameObjInstList[otherObj.objID].posCurr = otherObj.position;
-			//sGameObjInstList[otherObj.objID].dirCurr = otherObj.dirCurr;
-			//sGameObjInstList[otherObj.objID].flag = 1;
+			gameObjInstSet(otherObj.objID, TYPE_BULLET, BULLET_SIZE, &otherObj.position, nullptr, otherObj.dirCurr);
 #ifdef PrintMessage
 			std::cout << "Obj " << otherObj.objID << "\n";
 			std::cout << "Obj pos" << otherObj.position.x << "," << shipInfo.position.y << "\n";
@@ -269,32 +264,8 @@ void ReceiveServerMessages(SOCKET clientSocket) {
 #endif
 
 		}
-
 #ifdef PrintMessage
 		std::cout << "------------------------\n\n";
 #endif
-	//std::cout << "Object ID: " << recv.ObjectID << " Position: " << recv.position.x << " " << recv.position.y << "\n";
-
-	//std::lock_guard<std::mutex> lock(GAME_OBJECT_LIST_MUTEX);
-	//sGameObjInstList[recv.ObjectID].posCurr = recv.position;
-	//sGameObjInstList[recv.ObjectID].dirCurr = recv.dirCurr;
-
-
-		//char buffer[sizeof(SERVER_MESSAGE_FORMAT)];
-		//sockaddr_in servAddr;
-		//int servAddrLen = sizeof(servAddr);
-
-		//int bytesRead = recvfrom(clientSocket, buffer, sizeof(buffer), 0,
-		//	reinterpret_cast<sockaddr*>(&servAddr), &servAddrLen);
-		//if (bytesRead == SOCKET_ERROR) {
-		//	std::cerr << "recvfrom() failed: " << WSAGetLastError() << std::endl;
-		//}
-
-		//SERVER_MESSAGE_FORMAT recv{ *reinterpret_cast<SERVER_MESSAGE_FORMAT*>(buffer) };
-		////std::cout << "Object ID: " << recv.ObjectID << " Position: " << recv.position.x << " " << recv.position.y << "\n";
-
-		//std::lock_guard<std::mutex> lock(GAME_OBJECT_LIST_MUTEX);
-		//sGameObjInstList[recv.ObjectID].posCurr = recv.position;
-		//sGameObjInstList[recv.ObjectID].dirCurr = recv.dirCurr;
 	}
 }

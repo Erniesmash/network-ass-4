@@ -66,6 +66,7 @@ const float					SHIP_ACCEL_BACKWARD = 60.0f;		// ship backward acceleration (in 
 const float					SHIP_ROT_SPEED = (2.0f * PI);		// ship rotation speed (degree/second)
 
 const float					BULLET_SPEED = 150.0f;					// bullet speed (m/s)
+const float					BULLET_SIZE = 3.0f;
 
 const float         BOUNDING_RECT_SIZE = 1.0f;      // this is the normalized bounding rectangle (width and height) sizes - AABB collision data
 
@@ -123,6 +124,7 @@ void GameStateAsteroidsDraw(void);
 void GameStateAsteroidsFree(void);
 void GameStateAsteroidsUnload(void);
 int AddNewShip();
+int FireBullet(AEVec2& pos, AEVec2& vel);
 void gameObjInstSet(int id, unsigned long type, float scale, AEVec2* pPos, AEVec2* pVel, float dir);
 extern GameObjInst sGameObjInstList[GAME_OBJ_INST_NUM_MAX];
 

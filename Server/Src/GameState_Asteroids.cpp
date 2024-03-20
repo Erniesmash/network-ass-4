@@ -209,6 +209,19 @@ int AddNewShip()
  //reset the score and the number of ship
 }
 
+int FireBullet(AEVec2& pos, AEVec2& vel)
+{
+	GameObjInst* newBulletInst = gameObjInstCreate(TYPE_BULLET, BULLET_SIZE, &pos, &vel, 0.0f);
+	AE_ASSERT(newBulletInst);
+	currentAliveObjects++;
+
+	unsigned int bulletID = newBulletInst - sGameObjInstList;
+	GameObjInst* newBulletData{};
+	allOtherObjsInfo.push_back(newBulletInst);
+
+	return static_cast<int>(bulletID);
+}
+
 /******************************************************************************/
 /*!
 	"Update" function of this state
@@ -411,7 +424,7 @@ void GameStateAsteroidsUpdate(void)
 
 	for (int x{ 0 }; x < numofObjs; ++x)
 	{
-		memcpy(&text[(2 * sizeof(int)) + (shipMsg.size() * sizeof(SHIP_OBJ_INFO)) + (x * sizeof(SHIP_OBJ_INFO))], &otherObjMsg[x], sizeof(OTHER_OBJ_INFO));
+		memcpy(&text[(2 * sizeof(int)) + (shipMsg.size() * sizeof(SHIP_OBJ_INFO)) + (x * sizeof(OTHER_OBJ_INFO))], &otherObjMsg[x], sizeof(OTHER_OBJ_INFO));
 	}
 
 
@@ -524,30 +537,16 @@ void GameStateAsteroidsFree(void)
 /******************************************************************************/
 void GameStateAsteroidsUnload(void)
 {
-	AEGfxMeshFree(spShip->pObject->pMesh);
 	// free all mesh data (shapes) of each object using "AEGfxTriFree"
 	for (unsigned long i = 0; i < GAME_OBJ_INST_NUM_MAX; i++)
 	{
 		GameObjInst* pInst = sGameObjInstList + i;
 
-		if (pInst->pObject != nullptr && pInst->pObject->type == TYPE_BULLET) {
+		if (pInst->pObject != nullptr) {
 			AEGfxMeshFree(pInst->pObject->pMesh);
 			break;
 		}
 	}	
-
-	for (unsigned long i = 0; i < GAME_OBJ_INST_NUM_MAX; i++)
-	{
-		GameObjInst* pInst = sGameObjInstList + i;
-		/*
-		if ((pInst->flag & FLAG_ACTIVE) == 0)
-			continue;
-		*/
-		if (pInst->pObject != nullptr && pInst->pObject->type == TYPE_ASTEROID) {
-			AEGfxMeshFree(pInst->pObject->pMesh);
-			break;
-		}
-	}
 }
 
 

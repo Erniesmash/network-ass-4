@@ -31,6 +31,7 @@ const float					SHIP_ACCEL_FORWARD = 60.0f;				// ship forward acceleration (in 
 const float					SHIP_ACCEL_BACKWARD = 60.0f;				// ship backward acceleration (in m/s^2)
 const float					SHIP_ROT_SPEED = (2.0f * PI);	// ship rotation speed (degree/second)
 
+const float					BULLET_SIZE = 3.0f;
 const float					BULLET_SPEED = 150.0f;				// bullet speed (m/s)
 
 /******************************************************************************/
