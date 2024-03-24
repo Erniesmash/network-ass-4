@@ -68,6 +68,9 @@ const float					SHIP_ROT_SPEED = (2.0f * PI);		// ship rotation speed (degree/se
 const float					BULLET_SPEED = 150.0f;					// bullet speed (m/s)
 const float					BULLET_SIZE = 3.0f;
 
+const float					ASTEROID_SIZE = 70.f;
+const float					ASTEROID_SPEED = 50.f;
+
 const float         BOUNDING_RECT_SIZE = 1.0f;      // this is the normalized bounding rectangle (width and height) sizes - AABB collision data
 
 enum MESSAGE_TYPE
@@ -94,17 +97,22 @@ struct SHIP_OBJ_INFO
 	int shipID;
 	int score;
 	int live;
-	AEVec2 position;
-	float dirCurr;
-	SHIP_OBJ_INFO(int sid, int s, int l, AEVec2 p, float d);
+	float				scale;		// scaling value of the object instance
+	AEVec2				position;	// object current position
+	AEVec2				velCurr;	// object current velocity
+	float				dirCurr;	// object current direction
+	SHIP_OBJ_INFO(int sid, int s, int l, float sc, AEVec2 p, AEVec2 v, float d);
 };
 
 struct OTHER_OBJ_INFO
 {
 	int objID;
-	AEVec2 position;
-	float dirCurr;
-	OTHER_OBJ_INFO(int oid,AEVec2 p, float d);
+	int type;
+	float				scale;		// scaling value of the object instance
+	AEVec2				position;	// object current position
+	AEVec2				velCurr;	// object current velocity
+	float				dirCurr;	// object current direction
+	OTHER_OBJ_INFO(int oid, int t, float s, AEVec2 p, AEVec2 v, float d);
 };
 
 

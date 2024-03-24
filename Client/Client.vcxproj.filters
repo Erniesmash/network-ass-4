@@ -10,6 +10,9 @@
     <ClCompile Include="Src\Main.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="Src\Collision.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\GameState_Asteroids.h">
@@ -22,6 +25,9 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="Include\Main.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Collision.h">
       <Filter>Include</Filter>
     </ClInclude>
   </ItemGroup>

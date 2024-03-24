@@ -14,6 +14,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
  /******************************************************************************/
 
 #include "main.h"
+#include "Collision.h"
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
@@ -60,6 +61,7 @@ GameObjInst *		gameObjInstCreate (unsigned long type, float scale,
 void					gameObjInstDestroy(GameObjInst * pInst);
 
 
+s8 fontid;
 /******************************************************************************/
 /*!
 	"Load" function of this state
@@ -67,6 +69,8 @@ void					gameObjInstDestroy(GameObjInst * pInst);
 /******************************************************************************/
 void GameStateAsteroidsLoad(void)
 {
+	fontid = AEGfxCreateFont("../Resources/Fonts/Arial Italic.ttf", 20);
+
 	// zero the game object array
 	memset(sGameObjList, 0, sizeof(GameObj) * GAME_OBJ_NUM_MAX);
 	// No game objects (shapes) at this point
@@ -170,9 +174,75 @@ void GameStateAsteroidsInit(void)
 /******************************************************************************/
 void GameStateAsteroidsUpdate(void)
 {
+
 	// =========================================
 	// send message to server according to input
 	// =========================================
+	{
+		std::lock_guard<std::mutex> lock(GAME_OBJECT_LIST_MUTEX);
+		// ====================
+		// check for collision
+		// ====================
+		for (unsigned long i = 0; i < GAME_OBJ_INST_NUM_MAX; i++)
+		{
+			GameObjInst* pInst = sGameObjInstList + i;
+
+			if ((pInst->flag & FLAG_ACTIVE) == 0)
+				continue;
+
+			pInst->boundingBox.min.x = pInst->posCurr.x - (((1.f / 2.0f) * pInst->scale));
+			pInst->boundingBox.min.y = pInst->posCurr.y - (((1.f / 2.0f) * pInst->scale));
+
+			pInst->boundingBox.max.x = pInst->posCurr.x + (((1.f / 2.0f) * pInst->scale));
+			pInst->boundingBox.max.y = pInst->posCurr.y + (((1.f / 2.0f) * pInst->scale));
+			if (pInst->pObject->type == TYPE_BULLET) {
+				if (pInst->posCurr.x < AEGfxGetWinMinX() || pInst->posCurr.x > AEGfxGetWinMaxX() || pInst->posCurr.y > AEGfxGetWinMaxY() || pInst->posCurr.y < AEGfxGetWinMinY()) {
+					gameObjInstDestroy(pInst);
+				}
+			}
+			if (pInst->pObject->type == TYPE_ASTEROID) {
+				for (unsigned long x = 0; x < GAME_OBJ_INST_NUM_MAX; x++)
+				{
+					GameObjInst* pInst2 = sGameObjInstList + x;
+					if ((pInst2->flag & FLAG_ACTIVE) == 0)
+						continue;
+
+
+					pInst2->boundingBox.min.x = pInst2->posCurr.x - (((1.f / 2.0f) * pInst2->scale));
+					pInst2->boundingBox.min.y = pInst2->posCurr.y - (((1.f / 2.0f) * pInst2->scale));
+
+					pInst2->boundingBox.max.x = pInst2->posCurr.x + (((1.f / 2.0f) * pInst2->scale));
+					pInst2->boundingBox.max.y = pInst2->posCurr.y + (((1.f / 2.0f) * pInst2->scale));
+
+					if (pInst2->pObject->type == TYPE_SHIP) {
+						if (CollisionIntersection_RectRect(pInst->boundingBox, pInst->velCurr, pInst2->boundingBox, pInst2->velCurr)) {
+							gameObjInstDestroy(pInst);
+
+							//Reset Ship Position
+							AEVec2 zero = { 0,0 };
+							pInst2->velCurr = zero;
+							pInst2->posCurr = zero;
+
+							//onValueChange = true;
+						}
+					}
+					if (pInst2->pObject->type == TYPE_BULLET) {
+						if (CollisionIntersection_RectRect(pInst->boundingBox, pInst->velCurr, pInst2->boundingBox, pInst2->velCurr)) {
+							gameObjInstDestroy(pInst);
+
+							//Reset Ship Position
+							AEVec2 zero = { 0,0 };
+							pInst2->velCurr = zero;
+							pInst2->posCurr = zero;
+
+							//onValueChange = true;
+						}
+					}
+				}
+			}
+		}
+	}
+
 	
 	if (AEInputCheckCurr(AEVK_UP))
 	{
@@ -196,7 +266,7 @@ void GameStateAsteroidsUpdate(void)
 
 	if (AEInputCheckTriggered(AEVK_SPACE))
 	{
-		SendEventToServer(assignedShipID, MESSAGE_TYPE::TYPE_SHOOT);
+ 		SendEventToServer(assignedShipID, MESSAGE_TYPE::TYPE_SHOOT);
 	}
 	
 	// ===================================================
@@ -260,6 +330,8 @@ void GameStateAsteroidsUpdate(void)
 /******************************************************************************/
 void GameStateAsteroidsDraw(void)
 {
+	std::lock_guard<std::mutex> lock(GAME_OBJECT_LIST_MUTEX);
+
 	char strBuffer[1024];
 	
 	AEGfxSetRenderMode(AE_GFX_RM_COLOR);
@@ -283,29 +355,30 @@ void GameStateAsteroidsDraw(void)
 	//You can replace this condition/variable by your own data.
 	//The idea is to display any of these variables/strings whenever a change in their value happens
 	//static bool onValueChange = true;
-	if(onValueChange)
-	{
-		sprintf_s(strBuffer, "Score: %d", sScore);
-		//AEGfxPrint(10, 10, (u32)-1, strBuffer);
-		printf("%s \n", strBuffer);
+	//if(true)
+	//{
+	//	sprintf_s(strBuffer, "Score: %d", sScore);
+	//	AEGfxPrint(static_cast<s8>(fontid), strBuffer, .0f, .8f, 1.5f, 1.f, 0.f, 1.f);
 
-		sprintf_s(strBuffer, "Ship Left: %d", sShipLives >= 0 ? sShipLives : 0);
-		//AEGfxPrint(600, 10, (u32)-1, strBuffer);
-		printf("%s \n", strBuffer);
+	//	printf("%s \n", strBuffer);
 
-		// display the game over message
-		if (sShipLives < 0)
-		{
-			//AEGfxPrint(280, 260, 0xFFFFFFFF, "       GAME OVER       ");
-			printf("       GAME OVER       \n");
-		}
+	//	sprintf_s(strBuffer, "Ship Left: %d", sShipLives >= 0 ? sShipLives : 0);
+	//	//AEGfxPrint(600, 10, (u32)-1, strBuffer);
+	//	printf("%s \n", strBuffer);
 
-		if (sScore >= 5000) {
-			printf("You Rock \n");
-		}
+	//	// display the game over message
+	//	if (sShipLives < 0)
+	//	{
+	//		//AEGfxPrint(280, 260, 0xFFFFFFFF, "       GAME OVER       ");
+	//		printf("       GAME OVER       \n");
+	//	}
 
-		onValueChange = false;
-	}
+	//	if (sScore >= 5000) {
+	//		printf("You Rock \n");
+	//	}
+
+	//	onValueChange = false;
+	//}
 }
 
 /******************************************************************************/
@@ -365,6 +438,16 @@ void gameObjInstSet(int id, unsigned long type,
 
 	if (pInst->pObject == nullptr)
 		std::cout << "ISNULL\n";
+}
+
+void resetNonGameObjs(int offset)
+{
+	std::cout << "resetting\n";
+	for (unsigned long i = offset; i < GAME_OBJ_INST_NUM_MAX; i++)
+	{
+		GameObjInst* pInst = sGameObjInstList + i;
+		gameObjInstDestroy(pInst);
+	}
 }
 
 /******************************************************************************/

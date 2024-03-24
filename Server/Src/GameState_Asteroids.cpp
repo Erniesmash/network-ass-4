@@ -1,4 +1,4 @@
-/******************************************************************************/
+﻿/******************************************************************************/
 /*!
 \file			GameState_Asteroids.cpp
 \author 	
@@ -14,6 +14,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
  /******************************************************************************/
 
 #include "GameState_Asteroids.h"
+#include <random>
 
 int currentAliveObjects{};
 
@@ -62,9 +63,9 @@ static unsigned long		sScore;										// Current score
 static bool onValueChange = true;
 
 
-SHIP_OBJ_INFO::SHIP_OBJ_INFO(int sid, int s, int l, AEVec2 p, float d) :shipID{ sid }, score{ s }, live{ l },position { p }, dirCurr{ d } {}
+SHIP_OBJ_INFO::SHIP_OBJ_INFO(int sid, int s, int l, float sc, AEVec2 p, AEVec2 v, float d) :shipID{ sid }, score{ s }, live{ l }, scale{ sc }, position{ p }, velCurr{v}, dirCurr { d } {}
 
-OTHER_OBJ_INFO::OTHER_OBJ_INFO(int oid, AEVec2 p, float d): objID{ oid }, position{ p }, dirCurr{ d } {}
+OTHER_OBJ_INFO::OTHER_OBJ_INFO(int oid, int t, float s, AEVec2 p, AEVec2 v, float d) : objID{ oid }, type{ t }, scale{ s }, position{ p }, velCurr{ v }, dirCurr{ d } {}
 // ---------------------------------------------------------------------------
 
 // functions to create/destroy a game object instance
@@ -168,21 +169,28 @@ void GameStateAsteroidsInit(void)
 	//currentAliveObjects++;
 	//
 	// CREATE THE INITIAL ASTEROIDS INSTANCES USING THE "gameObjInstCreate" FUNCTION
-	/*
+	
 	AEVec2 asteroidVelocity;
 	AEVec2 asteroidPos;
-	std::srand(static_cast<unsigned int>(std::time(0)));
+	std::random_device rd;
+	std::mt19937 gen(rd());
+
+	// Create a uniform distribution for floats between 0 and 2π
+	std::uniform_real_distribution<float> dis(0.0f, 2.0f * 3.14159265358979323846f);
 	for (int i = 0; i < 4; i++) {
-		//Creates astroids at random positions
-		asteroidVelocity = { -80 + static_cast<float>(rand()) * static_cast<float>(80.0f - (-80.0f)) / RAND_MAX, -80.0f + static_cast<float>(rand()) * static_cast<float>(80.0f - (-80.0f)) / RAND_MAX };
+		// Generate a random float between 0 and 2π
+		float asteroidDir = dis(gen);
+		asteroidVelocity.x = cosf(asteroidDir) * ASTEROID_SPEED;
+		asteroidVelocity.y = sinf(asteroidDir) * ASTEROID_SPEED;
 		asteroidPos = { AEGfxGetWinMinX() - 50.0f, ((std::rand() % static_cast<int>((AEGfxGetWinMinY() - AEGfxGetWinMaxY() + 1)) + AEGfxGetWinMinY() ))};
-		gameObjInstCreate(TYPE_ASTEROID, static_cast<float>(std::rand() % (80 - 15 + 1) + 15), &asteroidPos, &asteroidVelocity, 0.0f);
+		auto goptr = gameObjInstCreate(TYPE_ASTEROID, ASTEROID_SIZE, &asteroidPos, &asteroidVelocity, 0.0f);
+		allOtherObjsInfo.push_back(goptr);
 	}
 
 	// Creates initial bullet instance
-	GameObjInst * bullet = gameObjInstCreate(TYPE_BULLET, 0, nullptr, nullptr, 0.0f);
-	gameObjInstDestroy(bullet);
-	*/
+	//GameObjInst * bullet = gameObjInstCreate(TYPE_BULLET, 0, nullptr, nullptr, 0.0f);
+	//gameObjInstDestroy(bullet);
+	
 
 	// reset the score and the number of ships
 	//sScore      = 0;
@@ -192,7 +200,6 @@ void GameStateAsteroidsInit(void)
 
 int AddNewShip()
 {
-
 	std::lock_guard<std::mutex> lock(GAME_OBJECT_LIST_MUTEX);
 	// Add a new SHip
 	GameObjInst* newShipInst = gameObjInstCreate(TYPE_SHIP, SHIP_SIZE, nullptr, nullptr, 0.0f);	
@@ -221,6 +228,7 @@ int FireBullet(AEVec2& pos, AEVec2& vel)
 
 	return static_cast<int>(bulletID);
 }
+
 
 /******************************************************************************/
 /*!
@@ -295,7 +303,32 @@ void GameStateAsteroidsUpdate(void)
 
 				if (pInst2->pObject->type == TYPE_SHIP) {		
 					if (CollisionIntersection_RectRect(pInst->boundingBox, pInst->velCurr, pInst2->boundingBox, pInst2->velCurr)) {
-						gameObjInstDestroy(pInst);
+						//gameObjInstDestroy(pInst);
+
+						//Reset Ship Position
+						AEVec2 zero = { 0,0 };
+						pInst2->velCurr = zero;
+						pInst2->posCurr = zero;
+
+						onValueChange = true;
+					}
+				}
+				if (pInst2->pObject->type == TYPE_BULLET) {
+					if (CollisionIntersection_RectRect(pInst->boundingBox, pInst->velCurr, pInst2->boundingBox, pInst2->velCurr)) {
+						//gameObjInstDestroy(pInst);
+						AEVec2 asteroidVelocity;
+						AEVec2 asteroidPos;
+						std::random_device rd;
+						std::mt19937 gen(rd());
+
+						// Create a uniform distribution for floats between 0 and 2π
+						std::uniform_real_distribution<float> dis(0.0f, 2.0f * 3.14159265358979323846f);
+
+						float asteroidDir = dis(gen);
+						asteroidVelocity.x = cosf(asteroidDir) * ASTEROID_SPEED;
+						asteroidVelocity.y = sinf(asteroidDir) * ASTEROID_SPEED;
+						asteroidPos = { AEGfxGetWinMinX() - 50.0f, ((std::rand() % static_cast<int>((AEGfxGetWinMinY() - AEGfxGetWinMaxY() + 1)) + AEGfxGetWinMinY())) };
+						gameObjInstSet(i, TYPE_ASTEROID, ASTEROID_SIZE, &asteroidPos, &asteroidVelocity, 0.0f);
 
 						//Reset Ship Position
 						AEVec2 zero = { 0,0 };
@@ -350,6 +383,13 @@ void GameStateAsteroidsUpdate(void)
 		if (pInst->pObject->type == TYPE_BULLET) {
 			if (pInst->posCurr.x < AEGfxGetWinMinX() || pInst->posCurr.x > AEGfxGetWinMaxX() || pInst->posCurr.y > AEGfxGetWinMaxY() || pInst->posCurr.y < AEGfxGetWinMinY()) {
 				gameObjInstDestroy(pInst);
+				auto it = std::find(allOtherObjsInfo.begin(), allOtherObjsInfo.end(), pInst);
+
+				// Check if the element was found
+				if (it != allOtherObjsInfo.end()) {
+					// Erase the element from the vector
+					allOtherObjsInfo.erase(it);
+				}
 			}
 		}
 	}
@@ -405,12 +445,25 @@ void GameStateAsteroidsUpdate(void)
 		if (s.isDead)
 			continue;
 		++numofShips;
-		shipMsg.emplace_back(s.objectID, s.score,s.shipLive ,sGameObjInstList[s.objectID].posCurr, sGameObjInstList[s.objectID].dirCurr);
+		shipMsg.emplace_back(
+			s.objectID, 
+			s.score,
+			s.shipLive,
+			sGameObjInstList[s.objectID].scale,
+			sGameObjInstList[s.objectID].posCurr, 
+			sGameObjInstList[s.objectID].velCurr,
+			sGameObjInstList[s.objectID].dirCurr);
 	}
 
 	for (GameObjInst* o : allOtherObjsInfo)
 	{
-		otherObjMsg.emplace_back(o-sGameObjInstList, o->posCurr, o->dirCurr);
+		otherObjMsg.emplace_back(
+			o-sGameObjInstList, 
+			o->pObject->type,  
+			o->scale,
+			o->posCurr,
+			o->velCurr,
+			o->dirCurr);
 	}
 
 	size_t sizeNeeded = (2 * sizeof(int)) + (shipMsg.size() * sizeof(SHIP_OBJ_INFO)) + (otherObjMsg.size() * sizeof(OTHER_OBJ_INFO));

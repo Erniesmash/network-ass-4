@@ -215,7 +215,6 @@ void ReceiveServerMessages(SOCKET clientSocket) {
 #ifdef PrintMessage
 		std::cout << "------------------------\n";
 #endif
-
 		char buffer[100000];
 
 		sockaddr_in servAddr;
@@ -234,6 +233,10 @@ void ReceiveServerMessages(SOCKET clientSocket) {
 #ifdef PrintMessage
 		std::cout << "numOfShips: " << static_cast<int>(numOfShips) << "\n";
 #endif
+		//{
+		//	std::lock_guard<std::mutex> lock(GAME_OBJECT_LIST_MUTEX);
+		//	resetNonGameObjs(numOfShips);
+		//}
 		SHIP_OBJ_INFO shipInfo{};
 		OTHER_OBJ_INFO otherObj{};
 		for (int i = 0; i < numOfShips; ++i)
@@ -241,7 +244,7 @@ void ReceiveServerMessages(SOCKET clientSocket) {
 			memcpy(&shipInfo, &buffer[8 + (i*sizeof(SHIP_OBJ_INFO))], sizeof(SHIP_OBJ_INFO));
 
 			std::lock_guard<std::mutex> lock(GAME_OBJECT_LIST_MUTEX);
-			gameObjInstSet(shipInfo.shipID,TYPE_SHIP, SHIP_SIZE, &shipInfo.position, nullptr, shipInfo.dirCurr);
+			gameObjInstSet(shipInfo.shipID,TYPE_SHIP, SHIP_SIZE, &shipInfo.position, &shipInfo.velCurr, shipInfo.dirCurr);
 		
 #ifdef PrintMessage
 			std::cout << "Ship " << shipInfo.shipID << "\n";
@@ -256,7 +259,13 @@ void ReceiveServerMessages(SOCKET clientSocket) {
 		{
 			memcpy(&otherObj, &buffer[8 + (numOfShips * sizeof(SHIP_OBJ_INFO)) + (i*sizeof(OTHER_OBJ_INFO))], sizeof(OTHER_OBJ_INFO));
 			std::lock_guard<std::mutex> lock(GAME_OBJECT_LIST_MUTEX);
-			gameObjInstSet(otherObj.objID, TYPE_BULLET, BULLET_SIZE, &otherObj.position, nullptr, otherObj.dirCurr);
+			
+			//if (otherObj.type == TYPE_BULLET) {
+				gameObjInstSet(otherObj.objID, otherObj.type, otherObj.scale, &otherObj.position, &otherObj.velCurr, otherObj.dirCurr);
+			//}
+			//else if (otherObj.type == TYPE_ASTEROID){
+				//gameObjInstSet(otherObj.objID, TYPE_ASTEROID, ASTEROID_SIZE, &otherObj.position, nullptr, otherObj.dirCurr);
+			//}
 #ifdef PrintMessage
 			std::cout << "Obj " << otherObj.objID << "\n";
 			std::cout << "Obj pos" << otherObj.position.x << "," << shipInfo.position.y << "\n";

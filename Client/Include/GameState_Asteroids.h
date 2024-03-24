@@ -15,7 +15,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 
 #ifndef ASS4_GAME_STATE_PLAY_H_
 #define ASS4_GAME_STATE_PLAY_H_
-
+#include "Collision.h"
 /******************************************************************************/
 /*!
 	Defines
@@ -29,10 +29,13 @@ const unsigned int	SHIP_INITIAL_NUM = 3;						// initial number of ship lives
 const float					SHIP_SIZE = 16.0f;				// ship size
 const float					SHIP_ACCEL_FORWARD = 60.0f;				// ship forward acceleration (in m/s^2)
 const float					SHIP_ACCEL_BACKWARD = 60.0f;				// ship backward acceleration (in m/s^2)
-const float					SHIP_ROT_SPEED = (2.0f * PI);	// ship rotation speed (degree/second)
+const float					SHIP_ROT_SPEED = (2.0f * 3.14159265358979323846f);	// ship rotation speed (degree/second)
 
 const float					BULLET_SIZE = 3.0f;
 const float					BULLET_SPEED = 150.0f;				// bullet speed (m/s)
+
+const float					ASTEROID_SIZE = 70.f;
+const float					ASTEROID_SPEED = 50.f;
 
 /******************************************************************************/
 /*!
@@ -58,6 +61,7 @@ struct GameObjInst
 	AEVec2				posCurr;	// object current position
 	AEVec2				velCurr;	// object current velocity
 	float				dirCurr;	// object current direction
+	AABB				boundingBox;// object bouding box that encapsulates the object
 	AEMtx33				transform;	// object transformation matrix: Each frame, 
 	// calculate the object instance's transformation matrix and save it here
 };
@@ -100,15 +104,22 @@ struct SHIP_OBJ_INFO
 	int shipID;
 	int score;
 	int live;
-	AEVec2 position;
-	float dirCurr;
+	float				scale;		// scaling value of the object instance
+	AEVec2				position;	// object current position
+	AEVec2				velCurr;	// object current velocity
+	float				dirCurr;	// object current direction
+
 };
 
 struct OTHER_OBJ_INFO
 {
 	int objID;
-	AEVec2 position;
-	float dirCurr;
+	int type;
+	float				scale;		// scaling value of the object instance
+	AEVec2				position;	// object current position
+	AEVec2				velCurr;	// object current velocity
+	float				dirCurr;	// object current direction
+
 };
 
 
@@ -123,6 +134,7 @@ void GameStateAsteroidsUnload(void);
 
 void SendEventToServer(int shipID, MESSAGE_TYPE messageType);
 void gameObjInstSet(int id, unsigned long type, float scale, AEVec2* pPos, AEVec2* pVel, float dir);
+void resetNonGameObjs(int offset);
 
 extern GameObjInst sGameObjInstList[GAME_OBJ_INST_NUM_MAX];
 
