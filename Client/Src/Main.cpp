@@ -25,7 +25,9 @@ std::string serverPort;
 addrinfo* serverInfo;
 SOCKET clientSocket;
 int assignedShipID;
+GAME_SCORE gameScore;
 std::mutex GAME_OBJECT_LIST_MUTEX;
+std::mutex GAME_SCORE_MUTEX;
 
 
 /******************************************************************************/
@@ -242,6 +244,11 @@ void ReceiveServerMessages(SOCKET clientSocket) {
 		for (int i = 0; i < numOfShips; ++i)
 		{
 			memcpy(&shipInfo, &buffer[8 + (i*sizeof(SHIP_OBJ_INFO))], sizeof(SHIP_OBJ_INFO));
+			if ( i == assignedShipID ){
+				std::lock_guard<std::mutex> lock(GAME_SCORE_MUTEX);
+				gameScore.score = shipInfo.score;
+				gameScore.live = shipInfo.live;
+			}
 
 			std::lock_guard<std::mutex> lock(GAME_OBJECT_LIST_MUTEX);
 			gameObjInstSet(shipInfo.shipID,TYPE_SHIP, SHIP_SIZE, &shipInfo.position, &shipInfo.velCurr, shipInfo.dirCurr);

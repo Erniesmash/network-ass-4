@@ -44,6 +44,11 @@ struct SERVER_INITIAL_MESSAGE_FORMAT
 	int ShipID;
 };
 
+struct GAME_SCORE {
+	int score;
+	int live;
+};
+
 //------------------------------------
 // Globals
 
@@ -55,7 +60,9 @@ extern std::string serverPort;
 extern addrinfo* serverInfo;
 extern SOCKET clientSocket;
 extern int assignedShipID;
+extern GAME_SCORE gameScore;
 extern std::mutex GAME_OBJECT_LIST_MUTEX;
+extern std::mutex GAME_STATS_MUTEX;
 
 int WinsockServerConnection();
 void ReceiveServerMessages(SOCKET clientSocket);
