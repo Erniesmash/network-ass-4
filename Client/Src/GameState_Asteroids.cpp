@@ -335,7 +335,8 @@ void GameStateAsteroidsDraw(void)
 	char strBuffer[1024];
 	
 	AEGfxSetRenderMode(AE_GFX_RM_COLOR);
-	AEGfxTextureSet(NULL, 0, 0);
+	AEGfxSetBlendMode(AE_GFX_BM_BLEND);
+	//AEGfxTextureSet(NULL, 0, 0);
 
 	// draw all object instances in the list
 	for (unsigned long i = 0; i < GAME_OBJ_INST_NUM_MAX; i++)
