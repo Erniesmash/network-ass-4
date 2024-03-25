@@ -101,6 +101,7 @@ struct SERVER_MESSAGE_FORMAT
 
 struct SHIP_OBJ_INFO
 {
+	int dead;
 	int shipID;
 	int score;
 	int live;

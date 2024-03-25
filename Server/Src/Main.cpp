@@ -300,7 +300,7 @@ void ReceiveClientMessages(SOCKET clientSocket) {
 			vel.y = vel.y * BULLET_SPEED;
 
 			// Create an instance
-			FireBullet(currShip.posCurr, vel);
+			FireBullet(recv.ShipID, currShip.posCurr, vel);
 		}
 	}
 }

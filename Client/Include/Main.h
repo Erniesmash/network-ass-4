@@ -62,7 +62,7 @@ extern SOCKET clientSocket;
 extern int assignedShipID;
 extern GAME_SCORE gameScore;
 extern std::mutex GAME_OBJECT_LIST_MUTEX;
-extern std::mutex GAME_STATS_MUTEX;
+extern std::mutex GAME_SCORE_MUTEX;
 
 int WinsockServerConnection();
 void ReceiveServerMessages(SOCKET clientSocket);

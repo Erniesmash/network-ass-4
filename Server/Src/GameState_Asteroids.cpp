@@ -63,7 +63,7 @@ static unsigned long		sScore;										// Current score
 static bool onValueChange = true;
 
 
-SHIP_OBJ_INFO::SHIP_OBJ_INFO(int sid, int s, int l, float sc, AEVec2 p, AEVec2 v, float d) :shipID{ sid }, score{ s }, live{ l }, scale{ sc }, position{ p }, velCurr{v}, dirCurr { d } {}
+SHIP_OBJ_INFO::SHIP_OBJ_INFO(int ded, int sid, int s, int l, float sc, AEVec2 p, AEVec2 v, float d) : dead{ded}, shipID { sid }, score{ s }, live{ l }, scale{ sc }, position{ p }, velCurr{ v }, dirCurr{ d } {}
 
 OTHER_OBJ_INFO::OTHER_OBJ_INFO(int oid, int t, float s, AEVec2 p, AEVec2 v, float d) : objID{ oid }, type{ t }, scale{ s }, position{ p }, velCurr{ v }, dirCurr{ d } {}
 // ---------------------------------------------------------------------------
@@ -216,12 +216,12 @@ int AddNewShip()
  //reset the score and the number of ship
 }
 
-int FireBullet(AEVec2& pos, AEVec2& vel)
+int FireBullet(int shipid, AEVec2& pos, AEVec2& vel)
 {
 	GameObjInst* newBulletInst = gameObjInstCreate(TYPE_BULLET, BULLET_SIZE, &pos, &vel, 0.0f);
 	AE_ASSERT(newBulletInst);
 	currentAliveObjects++;
-
+	newBulletInst->fromShipIdx = shipid;
 	unsigned int bulletID = newBulletInst - sGameObjInstList;
 	GameObjInst* newBulletData{};
 	allOtherObjsInfo.push_back(newBulletInst);
@@ -306,11 +306,16 @@ void GameStateAsteroidsUpdate(void)
 						//gameObjInstDestroy(pInst);
 
 						//Reset Ship Position
-						AEVec2 zero = { 0,0 };
-						pInst2->velCurr = zero;
-						pInst2->posCurr = zero;
 
-						onValueChange = true;
+						if (!allShipInfo[x].isDead) {
+							//Reset Ship Position
+							AEVec2 zero = { 0,0 };
+							pInst2->velCurr = zero;
+							pInst2->posCurr = zero;
+							if (--allShipInfo[x].shipLive < 0) {
+								allShipInfo[x].isDead = true;
+							}
+						}
 					}
 				}
 				if (pInst2->pObject->type == TYPE_BULLET) {
@@ -330,12 +335,16 @@ void GameStateAsteroidsUpdate(void)
 						asteroidPos = { AEGfxGetWinMinX() - 50.0f, ((std::rand() % static_cast<int>((AEGfxGetWinMinY() - AEGfxGetWinMaxY() + 1)) + AEGfxGetWinMinY())) };
 						gameObjInstSet(i, TYPE_ASTEROID, ASTEROID_SIZE, &asteroidPos, &asteroidVelocity, 0.0f);
 
-						//Reset Ship Position
-						AEVec2 zero = { 0,0 };
-						pInst2->velCurr = zero;
-						pInst2->posCurr = zero;
+						allShipInfo[pInst2->fromShipIdx].score += 10;
 
-						onValueChange = true;
+						gameObjInstDestroy(pInst2);
+						auto it = std::find(allOtherObjsInfo.begin(), allOtherObjsInfo.end(), pInst2);
+
+						// Check if the element was found
+						if (it != allOtherObjsInfo.end()) {
+							// Erase the element from the vector
+							allOtherObjsInfo.erase(it);
+						}
 					}
 				}
 			}
@@ -446,6 +455,7 @@ void GameStateAsteroidsUpdate(void)
 			continue;
 		++numofShips;
 		shipMsg.emplace_back(
+			(int)s.isDead,
 			s.objectID, 
 			s.score,
 			s.shipLive,

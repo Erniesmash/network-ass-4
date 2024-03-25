@@ -47,6 +47,7 @@ struct GameObjInst
 	float				dirCurr;	// object current direction
 	AABB				boundingBox;// object bouding box that encapsulates the object
 	AEMtx33				transform;	// object transformation matrix: Each frame, 
+	int					fromShipIdx;
 	// calculate the object instance's transformation matrix and save it here
 };
 
@@ -94,6 +95,7 @@ struct SHIP_OBJ
 
 struct SHIP_OBJ_INFO
 {
+	int dead;
 	int shipID;
 	int score;
 	int live;
@@ -101,7 +103,7 @@ struct SHIP_OBJ_INFO
 	AEVec2				position;	// object current position
 	AEVec2				velCurr;	// object current velocity
 	float				dirCurr;	// object current direction
-	SHIP_OBJ_INFO(int sid, int s, int l, float sc, AEVec2 p, AEVec2 v, float d);
+	SHIP_OBJ_INFO(int ded, int sid, int s, int l, float sc, AEVec2 p, AEVec2 v, float d);
 };
 
 struct OTHER_OBJ_INFO
@@ -132,7 +134,7 @@ void GameStateAsteroidsDraw(void);
 void GameStateAsteroidsFree(void);
 void GameStateAsteroidsUnload(void);
 int AddNewShip();
-int FireBullet(AEVec2& pos, AEVec2& vel);
+int FireBullet(int shipid, AEVec2& pos, AEVec2& vel);
 void gameObjInstSet(int id, unsigned long type, float scale, AEVec2* pPos, AEVec2* pVel, float dir);
 extern GameObjInst sGameObjInstList[GAME_OBJ_INST_NUM_MAX];
 

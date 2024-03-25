@@ -358,14 +358,16 @@ void GameStateAsteroidsDraw(void)
 	//static bool onValueChange = true;
 	//if(true)
 	//{
-		sprintf_s(strBuffer, "Score: %d", sScore);
+	{
+		std::lock_guard<std::mutex> lock2(GAME_SCORE_MUTEX);
+		sprintf_s(strBuffer, "Score: %d", gameScore.score);
 		AEGfxPrint(static_cast<s8>(fontid), strBuffer, .0f, .5f, 1.5f, 1.f, 0.f, 1.f);
 
-	//	printf("%s \n", strBuffer);
+		//	printf("%s \n", strBuffer);
 
-		sprintf_s(strBuffer, "Ship Left: %d", sShipLives >= 0 ? sShipLives : 0);
+		sprintf_s(strBuffer, "Ship Left: %d", gameScore.live >= 0 ? gameScore.live : 0);
 		AEGfxPrint(static_cast<s8>(fontid), strBuffer, .0f, .8f, 1.5f, 1.f, 0.f, 1.f);
-
+	}
 	//	//AEGfxPrint(600, 10, (u32)-1, strBuffer);
 	//	printf("%s \n", strBuffer);
 
