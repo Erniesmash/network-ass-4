@@ -61,6 +61,7 @@ static long					sShipLives;									// The number of lives left
 static unsigned long		sScore;										// Current score
 
 static bool onValueChange = true;
+static double m_timeElapsed{};
 
 
 SHIP_OBJ_INFO::SHIP_OBJ_INFO(int ded, int sid, int s, int l, float sc, AEVec2 p, AEVec2 v, float d) : dead{ded}, shipID { sid }, score{ s }, live{ l }, scale{ sc }, position{ p }, velCurr{ v }, dirCurr{ d } {}
@@ -246,6 +247,9 @@ void GameStateAsteroidsUpdate(void)
 	// update according to input
 	// =========================
 	// Done in main172.28.80.1
+
+	m_timeElapsed += AEFrameRateControllerGetFrameTime();
+
 	std::lock_guard<std::mutex> lock(GAME_OBJECT_LIST_MUTEX);
 
 	// ======================================================
@@ -435,88 +439,92 @@ void GameStateAsteroidsUpdate(void)
 		AEMtx33Concat(&pInst->transform, &trans, &pInst->transform);
 	}
 
-	// ========================================
-	// send new position information to clients
-	// ========================================
-	// Send Position Info to client
-
-	//Generate the Message 
-	//static std::vector<SHIP_OBJ> allShipInfo{};
-	//static std::vector<GameObj*> allOtherObjsInfo{};
-	std::vector<SHIP_OBJ_INFO> shipMsg{};
-	std::vector<OTHER_OBJ_INFO> otherObjMsg{};
-	int numofShips{};
-	int numofObjs{ static_cast<int>(allOtherObjsInfo.size()) };
-	//std::cout << allShipInfo.size() << "::num Of Ships Created\n";
-
-	for (const SHIP_OBJ& s : allShipInfo)
+	if (m_timeElapsed >= PACKAGE_INTERVAL)
 	{
-		if (s.isDead)
-			continue;
-		++numofShips;
-		shipMsg.emplace_back(
-			(int)s.isDead,
-			s.objectID, 
-			s.score,
-			s.shipLive,
-			sGameObjInstList[s.objectID].scale,
-			sGameObjInstList[s.objectID].posCurr, 
-			sGameObjInstList[s.objectID].velCurr,
-			sGameObjInstList[s.objectID].dirCurr);
-	}
+		m_timeElapsed = 0.0;
+		// ========================================
+		// send new position information to clients
+		// ========================================
+		// Send Position Info to client
 
-	for (GameObjInst* o : allOtherObjsInfo)
-	{
-		otherObjMsg.emplace_back(
-			o-sGameObjInstList, 
-			o->pObject->type,  
-			o->scale,
-			o->posCurr,
-			o->velCurr,
-			o->dirCurr);
-	}
+		//Generate the Message 
+		//static std::vector<SHIP_OBJ> allShipInfo{};
+		//static std::vector<GameObj*> allOtherObjsInfo{};
+		std::vector<SHIP_OBJ_INFO> shipMsg{};
+		std::vector<OTHER_OBJ_INFO> otherObjMsg{};
+		int numofShips{};
+		int numofObjs{ static_cast<int>(allOtherObjsInfo.size()) };
+		//std::cout << allShipInfo.size() << "::num Of Ships Created\n";
 
-	size_t sizeNeeded = (2 * sizeof(int)) + (shipMsg.size() * sizeof(SHIP_OBJ_INFO)) + (otherObjMsg.size() * sizeof(OTHER_OBJ_INFO));
-	std::string text(sizeNeeded, ' ');
-	memcpy(&text[0], &numofShips, sizeof(int));
-	memcpy(&text[sizeof(int)], &numofObjs, sizeof(int));
-	for (int x{ 0 }; x < numofShips; ++x)
-	{
-		memcpy(&text[(2 * sizeof(int)) + (x* sizeof(SHIP_OBJ_INFO))], &shipMsg[x], sizeof(SHIP_OBJ_INFO));
-	}
-
-	for (int x{ 0 }; x < numofObjs; ++x)
-	{
-		memcpy(&text[(2 * sizeof(int)) + (shipMsg.size() * sizeof(SHIP_OBJ_INFO)) + (x * sizeof(OTHER_OBJ_INFO))], &otherObjMsg[x], sizeof(OTHER_OBJ_INFO));
-	}
-
-
-	for (size_t i{0};i<ClientSocket.size();++i)
-	{
-		int clientAddrLen = sizeof(ClientSocket[i]);
-		int errorCode = sendto(listenerSocket,
-			text.c_str(),
-			static_cast<int>(text.size()),
-			0,
-			reinterpret_cast<sockaddr*>(&ClientSocket[i]),
-			clientAddrLen);
-
-		if (errorCode == SOCKET_ERROR) {
-			std::cerr << "sendto() failed: " << WSAGetLastError() << std::endl;
+		for (const SHIP_OBJ& s : allShipInfo)
+		{
+			if (s.isDead)
+				continue;
+			++numofShips;
+			shipMsg.emplace_back(
+				(int)s.isDead,
+				s.objectID, 
+				s.score,
+				s.shipLive,
+				sGameObjInstList[s.objectID].scale,
+				sGameObjInstList[s.objectID].posCurr, 
+				sGameObjInstList[s.objectID].velCurr,
+				sGameObjInstList[s.objectID].dirCurr);
 		}
-	}
 
-	/*for (int x{}; x < MAX_CLIENTS; ++x) {
-		for (int i{}; i < currentAliveObjects; ++i) {
+		for (GameObjInst* o : allOtherObjsInfo)
+		{
+			otherObjMsg.emplace_back(
+				o-sGameObjInstList, 
+				o->pObject->type,  
+				o->scale,
+				o->posCurr,
+				o->velCurr,
+				o->dirCurr);
+		}
+
+		size_t sizeNeeded = (2 * sizeof(int)) + (shipMsg.size() * sizeof(SHIP_OBJ_INFO)) + (otherObjMsg.size() * sizeof(OTHER_OBJ_INFO));
+		std::string text(sizeNeeded, ' ');
+		memcpy(&text[0], &numofShips, sizeof(int));
+		memcpy(&text[sizeof(int)], &numofObjs, sizeof(int));
+		for (int x{ 0 }; x < numofShips; ++x)
+		{
+			memcpy(&text[(2 * sizeof(int)) + (x* sizeof(SHIP_OBJ_INFO))], &shipMsg[x], sizeof(SHIP_OBJ_INFO));
+		}
+
+		for (int x{ 0 }; x < numofObjs; ++x)
+		{
+			memcpy(&text[(2 * sizeof(int)) + (shipMsg.size() * sizeof(SHIP_OBJ_INFO)) + (x * sizeof(OTHER_OBJ_INFO))], &otherObjMsg[x], sizeof(OTHER_OBJ_INFO));
+		}
+
+
+		for (size_t i{0};i<ClientSocket.size();++i)
+		{
 			int clientAddrLen = sizeof(ClientSocket[i]);
-			SERVER_MESSAGE_FORMAT toSend{};
-			toSend.ObjectID = i;
-			toSend.position = sGameObjInstList[i].posCurr;
-			toSend.dirCurr = sGameObjInstList[i].dirCurr;
+			int errorCode = sendto(listenerSocket,
+				text.c_str(),
+				static_cast<int>(text.size()),
+				0,
+				reinterpret_cast<sockaddr*>(&ClientSocket[i]),
+				clientAddrLen);
+
+			if (errorCode == SOCKET_ERROR) {
+				std::cerr << "sendto() failed: " << WSAGetLastError() << std::endl;
+			}
+		}
+
+		/*for (int x{}; x < MAX_CLIENTS; ++x) {
+			for (int i{}; i < currentAliveObjects; ++i) {
+				int clientAddrLen = sizeof(ClientSocket[i]);
+				SERVER_MESSAGE_FORMAT toSend{};
+				toSend.ObjectID = i;
+				toSend.position = sGameObjInstList[i].posCurr;
+				toSend.dirCurr = sGameObjInstList[i].dirCurr;
 
 		
-		}
-	}*/
+			}
+		}*/
+	}
 }
 
 /******************************************************************************/

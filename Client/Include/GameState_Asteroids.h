@@ -36,6 +36,7 @@ const float					BULLET_SPEED = 150.0f;				// bullet speed (m/s)
 
 const float					ASTEROID_SIZE = 70.f;
 const float					ASTEROID_SPEED = 50.f;
+const float         BOUNDING_RECT_SIZE = 1.0f;
 
 /******************************************************************************/
 /*!
@@ -123,6 +124,15 @@ struct OTHER_OBJ_INFO
 
 };
 
+struct DEAD_RECK_INFO
+{
+	bool					m_toInterpolate; //Bool to determine if the obj need to interpolate (for asteroids, bullets)
+	AEVec2				CorrectionVec;	// direction where the obj needs to move to dead reckon
+	float				  CorrectionRotation;	// direction where the obj needs to rotate to dead reckon
+	DEAD_RECK_INFO(bool interpol, AEVec2 v, float r);
+	DEAD_RECK_INFO();
+};
+
 
 // ---------------------------------------------------------------------------
 
@@ -135,6 +145,10 @@ void GameStateAsteroidsUnload(void);
 
 void SendEventToServer(int shipID, MESSAGE_TYPE messageType);
 void gameObjInstSet(int id, unsigned long type, float scale, AEVec2* pPos, AEVec2* pVel, float dir);
+void SetDeadReckInfo(int id, bool i, AEVec2 v, float rot);
+AEVec2 GetObjPos(int id);
+float GetObjRot(int id);
+void SetPackageInterval();
 void resetNonGameObjs(int offset);
 
 extern GameObjInst sGameObjInstList[GAME_OBJ_INST_NUM_MAX];

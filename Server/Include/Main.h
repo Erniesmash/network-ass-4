@@ -52,7 +52,7 @@ struct SERVER_INITIAL_MESSAGE_FORMAT
 extern float	g_dt;
 extern double	g_appTime;
 extern SOCKET listenerSocket;
-extern int constexpr MAX_CLIENTS{ 4 };
+extern int constexpr MAX_CLIENTS{ 1 };
 extern std::mutex GAME_OBJECT_LIST_MUTEX;
 extern std::vector<sockaddr_in> ClientSocket;
 

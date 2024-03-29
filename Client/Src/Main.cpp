@@ -30,6 +30,7 @@ std::mutex GAME_OBJECT_LIST_MUTEX;
 std::mutex GAME_SCORE_MUTEX;
 
 
+
 /******************************************************************************/
 /*!
 	Starting point of the application
@@ -227,7 +228,10 @@ void ReceiveServerMessages(SOCKET clientSocket) {
 		if (bytesRead == SOCKET_ERROR) {
 			std::cerr << "recvfrom() failed: " << WSAGetLastError() << std::endl;
 		}
-
+		{
+			std::lock_guard<std::mutex> lock(GAME_OBJECT_LIST_MUTEX);
+			SetPackageInterval();
+		}
 		int numOfShips{};
 		int  numOfOtherObj{};
 		memcpy(&numOfShips, &buffer[0], sizeof(int));
@@ -252,7 +256,21 @@ void ReceiveServerMessages(SOCKET clientSocket) {
 
 			std::lock_guard<std::mutex> lock(GAME_OBJECT_LIST_MUTEX);
 			gameObjInstSet(shipInfo.shipID,TYPE_SHIP, SHIP_SIZE, &shipInfo.position, &shipInfo.velCurr, shipInfo.dirCurr);
-		
+			AEVec2 currPos = GetObjPos(shipInfo.shipID);
+			bool toInterpolate = (currPos.x == shipInfo.position.x && currPos.y == shipInfo.position.y) ? false : true;
+
+			AEVec2 CorrectionVec{};
+			float xdist = shipInfo.position.x - currPos.x;
+			CorrectionVec.x = (abs(xdist) <= static_cast<float>(AEGetWindowWidth()) / 2.0f) ? xdist : (xdist <= 0.f) ? (static_cast<float>(AEGetWindowWidth()) - abs(xdist)) : ((static_cast<float>(AEGetWindowWidth()) - abs(xdist)) * -1.0f);
+			float ydist = shipInfo.position.y - currPos.y;
+			CorrectionVec.y = (abs(ydist) <= static_cast<float>(AEGetWindowHeight()) / 2.0f) ? ydist : (ydist <= 0.f) ? (static_cast<float>(AEGetWindowHeight()) - abs(ydist)) : ((static_cast<float>(AEGetWindowHeight()) - abs(ydist)) * -1.0f);
+
+
+			float CorrectionRot{ shipInfo.dirCurr - GetObjRot(shipInfo.shipID)};
+			SetDeadReckInfo(shipInfo.shipID, true, CorrectionVec, CorrectionRot); //Set some dunmmy value
+
+	
+
 #ifdef PrintMessage
 			std::cout << "Ship " << shipInfo.shipID << "\n";
 			std::cout << "Ship score" << shipInfo.score << "\n";
@@ -269,10 +287,27 @@ void ReceiveServerMessages(SOCKET clientSocket) {
 			
 			//if (otherObj.type == TYPE_BULLET) {
 				gameObjInstSet(otherObj.objID, otherObj.type, otherObj.scale, &otherObj.position, &otherObj.velCurr, otherObj.dirCurr);
+				AEVec2 currPos = GetObjPos(otherObj.objID);
+				bool toInterpolate = (currPos.x == otherObj.position.x && currPos.y == otherObj.position.y) ? false : true;
+				if (toInterpolate)
+				{
+					AEVec2 CorrectionVec{};
+					float xdist = otherObj.position.x - currPos.x;
+					CorrectionVec.x = (abs(xdist) <= static_cast<float>(AEGetWindowWidth()) / 2.0f) ? xdist : (xdist <= 0.f) ? (static_cast<float>(AEGetWindowWidth()) - abs(xdist)) : ((static_cast<float>(AEGetWindowWidth()) - abs(xdist)) * -1.0f);
+					float ydist = otherObj.position.y - currPos.y;
+					CorrectionVec.y = (abs(ydist) <= static_cast<float>(AEGetWindowHeight()) / 2.0f) ? ydist : (ydist <= 0.f) ? (static_cast<float>(AEGetWindowHeight()) - abs(ydist)) : ((static_cast<float>(AEGetWindowHeight()) - abs(ydist)) * -1.0f);
+
+					float CorrectionRot{ otherObj.dirCurr - GetObjRot(otherObj.objID) };
+					SetDeadReckInfo(otherObj.objID, true, CorrectionVec, CorrectionRot); //Set some dunmmy value
+				}
+				else
+					SetDeadReckInfo(otherObj.objID, false, otherObj.velCurr, otherObj.dirCurr); //Set some dunmmy value
 			//}
 			//else if (otherObj.type == TYPE_ASTEROID){
 				//gameObjInstSet(otherObj.objID, TYPE_ASTEROID, ASTEROID_SIZE, &otherObj.position, nullptr, otherObj.dirCurr);
 			//}
+
+			
 #ifdef PrintMessage
 			std::cout << "Obj " << otherObj.objID << "\n";
 			std::cout << "Obj pos" << otherObj.position.x << "," << shipInfo.position.y << "\n";
@@ -280,6 +315,9 @@ void ReceiveServerMessages(SOCKET clientSocket) {
 #endif
 
 		}
+
+
+		
 #ifdef PrintMessage
 		std::cout << "------------------------\n\n";
 #endif
