@@ -73,7 +73,7 @@ const float					ASTEROID_SIZE = 70.f;
 const float					ASTEROID_SPEED = 50.f;
 
 const float         BOUNDING_RECT_SIZE = 1.0f;      // this is the normalized bounding rectangle (width and height) sizes - AABB collision data
-const double				PACKAGE_INTERVAL = 0.5;					  // How often (secs) will the server send packages to all the clients 
+const double				PACKAGE_INTERVAL = 0.01;					  // How often (secs) will the server send packages to all the clients 
 
 enum MESSAGE_TYPE
 {

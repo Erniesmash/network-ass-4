@@ -117,6 +117,9 @@ int WINAPI WinMain(_In_ HINSTANCE instanceH, _In_opt_ HINSTANCE prevInstanceH, _
 
 		gGameStatePrev = gGameStateCurr;
 		gGameStateCurr = gGameStateNext;
+		if (receiveThread.joinable()) {
+			receiveThread.join();
+		}
 	}
 
 	// free the system
