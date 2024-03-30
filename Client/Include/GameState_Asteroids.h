@@ -100,6 +100,14 @@ struct SERVER_MESSAGE_FORMAT
 	float dirCurr;
 };
 
+struct SHIP_OBJ
+{
+	int objectID;
+	int shipLive;
+	int score;
+	bool isDead;
+};
+
 struct SHIP_OBJ_INFO
 {
 	int dead;
@@ -148,6 +156,8 @@ void gameObjInstSet(int id, unsigned long type, float scale, AEVec2* pPos, AEVec
 void SetDeadReckInfo(int id, bool i, AEVec2 v, float rot);
 AEVec2 GetObjPos(int id);
 float GetObjRot(int id);
+int GetShipLive(int id);
+void RespawnShip(int id, unsigned long type, float scale, AEVec2* pPos, AEVec2* pVel, float dir);
 void SetPackageInterval();
 void resetNonGameObjs(int offset);
 

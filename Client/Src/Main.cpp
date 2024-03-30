@@ -255,18 +255,23 @@ void ReceiveServerMessages(SOCKET clientSocket) {
 			}
 
 			std::lock_guard<std::mutex> lock(GAME_OBJECT_LIST_MUTEX);
-			gameObjInstSet(shipInfo.shipID,TYPE_SHIP, SHIP_SIZE, &shipInfo.position, &shipInfo.velCurr, shipInfo.dirCurr);
+			if(GetShipLive(shipInfo.shipID) != shipInfo.live) //Ship died, so we will just respawn the ship
+				RespawnShip(shipInfo.shipID, TYPE_SHIP, SHIP_SIZE, &shipInfo.position, &shipInfo.velCurr, shipInfo.dirCurr);
+			else
+				gameObjInstSet(shipInfo.shipID,TYPE_SHIP, SHIP_SIZE, &shipInfo.position, &shipInfo.velCurr, shipInfo.dirCurr);
+
 			AEVec2 currPos = GetObjPos(shipInfo.shipID);
 			bool toInterpolate = (currPos.x == shipInfo.position.x && currPos.y == shipInfo.position.y) ? false : true;
 
 			AEVec2 CorrectionVec{};
 			float xdist = shipInfo.position.x - currPos.x;
-			CorrectionVec.x = (abs(xdist) <= static_cast<float>(AEGetWindowWidth()) / 2.0f) ? xdist : (xdist <= 0.f) ? (static_cast<float>(AEGetWindowWidth()) - abs(xdist)) : ((static_cast<float>(AEGetWindowWidth()) - abs(xdist)) * -1.0f);
 			float ydist = shipInfo.position.y - currPos.y;
+			float rotDiff = shipInfo.dirCurr - GetObjRot(shipInfo.shipID);
+			CorrectionVec.x = (abs(xdist) <= static_cast<float>(AEGetWindowWidth()) / 2.0f) ? xdist : (xdist <= 0.f) ? (static_cast<float>(AEGetWindowWidth()) - abs(xdist)) : ((static_cast<float>(AEGetWindowWidth()) - abs(xdist)) * -1.0f);
+
 			CorrectionVec.y = (abs(ydist) <= static_cast<float>(AEGetWindowHeight()) / 2.0f) ? ydist : (ydist <= 0.f) ? (static_cast<float>(AEGetWindowHeight()) - abs(ydist)) : ((static_cast<float>(AEGetWindowHeight()) - abs(ydist)) * -1.0f);
-
-
-			float CorrectionRot{ shipInfo.dirCurr - GetObjRot(shipInfo.shipID)};
+			
+			float CorrectionRot = (abs(rotDiff) <= PI)? rotDiff : (rotDiff <= 0.f) ? (PI*2.0f - abs(rotDiff)) : ((PI * 2.0f - abs(rotDiff)) * -1.0f);
 			SetDeadReckInfo(shipInfo.shipID, true, CorrectionVec, CorrectionRot); //Set some dunmmy value
 
 	

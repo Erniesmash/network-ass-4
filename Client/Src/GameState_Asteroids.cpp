@@ -18,7 +18,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
-
+#include <vector>
 // -----------------------------------------------------------------------------
 
 // -----------------------------------------------------------------------------
@@ -53,7 +53,7 @@ static bool onValueChange = true;
 static double packageInterval{};
 static double timeElapsed{};
 DEAD_RECK_INFO			DeadReckList[GAME_OBJ_INST_NUM_MAX];	// Each element in this array represents a unique game object instance (sprite)
-
+static std::vector<SHIP_OBJ> allShipInfo{};  // vector storing the info of each ship (live, id, score)
 
 
 
@@ -181,6 +181,8 @@ void GameStateAsteroidsInit(void)
 /******************************************************************************/
 void GameStateAsteroidsUpdate(void)
 {
+
+	timeElapsed += AEFrameRateControllerGetFrameTime();
 	// ======================================================
 	// update physics of all active game object instances
 	//  -- Get the AABB bounding rectangle of every active instance:
@@ -210,8 +212,6 @@ void GameStateAsteroidsUpdate(void)
 			float fraction = static_cast<float>(AEFrameRateControllerGetFrameTime() / packageInterval);
 			if (DeadReckList[i].m_toInterpolate && timeElapsed < packageInterval && packageInterval > 0.0)
 			{
-				if (i == 0)
-					std::cout << "rotate ship\n";
 				AEVec2Scale(&CorectionVec, &(DeadReckList[i].CorrectionVec), fraction);
 				pInst->dirCurr += fraction * DeadReckList[i].CorrectionRotation;
 			}
@@ -236,68 +236,68 @@ void GameStateAsteroidsUpdate(void)
 	// send message to server according to input
 	// =========================================
 	{
-		//std::lock_guard<std::mutex> lock(GAME_OBJECT_LIST_MUTEX);
-		//// ====================
-		//// check for collision
-		//// ====================
-		//for (unsigned long i = 0; i < GAME_OBJ_INST_NUM_MAX; i++)
-		//{
-		//	GameObjInst* pInst = sGameObjInstList + i;
+		std::lock_guard<std::mutex> lock(GAME_OBJECT_LIST_MUTEX);
+		// ====================
+		// check for collision
+		// ====================
+		for (unsigned long i = 0; i < GAME_OBJ_INST_NUM_MAX; i++)
+		{
+			GameObjInst* pInst = sGameObjInstList + i;
 
-		//	if ((pInst->flag & FLAG_ACTIVE) == 0)
-		//		continue;
+			if ((pInst->flag & FLAG_ACTIVE) == 0)
+				continue;
 
-		//	pInst->boundingBox.min.x = pInst->posCurr.x - (((1.f / 2.0f) * pInst->scale));
-		//	pInst->boundingBox.min.y = pInst->posCurr.y - (((1.f / 2.0f) * pInst->scale));
+			pInst->boundingBox.min.x = pInst->posCurr.x - (((1.f / 2.0f) * pInst->scale));
+			pInst->boundingBox.min.y = pInst->posCurr.y - (((1.f / 2.0f) * pInst->scale));
 
-		//	pInst->boundingBox.max.x = pInst->posCurr.x + (((1.f / 2.0f) * pInst->scale));
-		//	pInst->boundingBox.max.y = pInst->posCurr.y + (((1.f / 2.0f) * pInst->scale));
-		//	if (pInst->pObject->type == TYPE_BULLET) {
-		//		if (pInst->posCurr.x < AEGfxGetWinMinX() || pInst->posCurr.x > AEGfxGetWinMaxX() || pInst->posCurr.y > AEGfxGetWinMaxY() || pInst->posCurr.y < AEGfxGetWinMinY()) {
-		//			gameObjInstDestroy(pInst);
-		//		}
-		//	}
-		//	if (pInst->pObject->type == TYPE_ASTEROID) {
-		//		for (unsigned long x = 0; x < GAME_OBJ_INST_NUM_MAX; x++)
-		//		{
-		//			GameObjInst* pInst2 = sGameObjInstList + x;
-		//			if ((pInst2->flag & FLAG_ACTIVE) == 0)
-		//				continue;
+			pInst->boundingBox.max.x = pInst->posCurr.x + (((1.f / 2.0f) * pInst->scale));
+			pInst->boundingBox.max.y = pInst->posCurr.y + (((1.f / 2.0f) * pInst->scale));
+			if (pInst->pObject->type == TYPE_BULLET) {
+				if (pInst->posCurr.x < AEGfxGetWinMinX() || pInst->posCurr.x > AEGfxGetWinMaxX() || pInst->posCurr.y > AEGfxGetWinMaxY() || pInst->posCurr.y < AEGfxGetWinMinY()) {
+					gameObjInstDestroy(pInst);
+				}
+			}
+			if (pInst->pObject->type == TYPE_ASTEROID) {
+				for (unsigned long x = 0; x < GAME_OBJ_INST_NUM_MAX; x++)
+				{
+					GameObjInst* pInst2 = sGameObjInstList + x;
+					if ((pInst2->flag & FLAG_ACTIVE) == 0)
+						continue;
 
 
-		//			pInst2->boundingBox.min.x = pInst2->posCurr.x - (((1.f / 2.0f) * pInst2->scale));
-		//			pInst2->boundingBox.min.y = pInst2->posCurr.y - (((1.f / 2.0f) * pInst2->scale));
+					pInst2->boundingBox.min.x = pInst2->posCurr.x - (((1.f / 2.0f) * pInst2->scale));
+					pInst2->boundingBox.min.y = pInst2->posCurr.y - (((1.f / 2.0f) * pInst2->scale));
 
-		//			pInst2->boundingBox.max.x = pInst2->posCurr.x + (((1.f / 2.0f) * pInst2->scale));
-		//			pInst2->boundingBox.max.y = pInst2->posCurr.y + (((1.f / 2.0f) * pInst2->scale));
+					pInst2->boundingBox.max.x = pInst2->posCurr.x + (((1.f / 2.0f) * pInst2->scale));
+					pInst2->boundingBox.max.y = pInst2->posCurr.y + (((1.f / 2.0f) * pInst2->scale));
 
-		//			if (pInst2->pObject->type == TYPE_SHIP) {
-		//				if (CollisionIntersection_RectRect(pInst->boundingBox, pInst->velCurr, pInst2->boundingBox, pInst2->velCurr)) {
-		//					gameObjInstDestroy(pInst);
+					if (pInst2->pObject->type == TYPE_SHIP) {
+						if (CollisionIntersection_RectRect(pInst->boundingBox, pInst->velCurr, pInst2->boundingBox, pInst2->velCurr)) {
+							gameObjInstDestroy(pInst);
 
-		//					//Reset Ship Position
-		//					AEVec2 zero = { 0,0 };
-		//					pInst2->velCurr = zero;
-		//					pInst2->posCurr = zero;
+							//Reset Ship Position
+							AEVec2 zero = { 0,0 };
+							pInst2->velCurr = zero;
+							pInst2->posCurr = zero;
 
-		//					//onValueChange = true;
-		//				}
-		//			}
-		//			if (pInst2->pObject->type == TYPE_BULLET) {
-		//				if (CollisionIntersection_RectRect(pInst->boundingBox, pInst->velCurr, pInst2->boundingBox, pInst2->velCurr)) {
-		//					gameObjInstDestroy(pInst);
+							//onValueChange = true;
+						}
+					}
+					if (pInst2->pObject->type == TYPE_BULLET) {
+						if (CollisionIntersection_RectRect(pInst->boundingBox, pInst->velCurr, pInst2->boundingBox, pInst2->velCurr)) {
+							gameObjInstDestroy(pInst);
 
-		//					//Reset Ship Position
-		//					AEVec2 zero = { 0,0 };
-		//					pInst2->velCurr = zero;
-		//					pInst2->posCurr = zero;
+							//Reset Ship Position
+							AEVec2 zero = { 0,0 };
+							pInst2->velCurr = zero;
+							pInst2->posCurr = zero;
 
-		//					//onValueChange = true;
-		//				}
-		//			}
-		//		}
-		//	}
-		//}
+							//onValueChange = true;
+						}
+					}
+				}
+			}
+		}
 	}
 
 	
@@ -431,7 +431,7 @@ void GameStateAsteroidsUpdate(void)
 		AEMtx33Concat(&pInst->transform, &trans, &pInst->transform);
 	}
 
-	timeElapsed += AEFrameRateControllerGetFrameTime();
+
 }
 
 /******************************************************************************/
@@ -530,6 +530,27 @@ void GameStateAsteroidsUnload(void)
 	}
 }
 
+void RespawnShip(int id, unsigned long type, float scale, AEVec2* pPos, AEVec2* pVel, float dir)
+{
+	AEVec2 zero;
+	AEVec2Zero(&zero);
+
+	GameObjInst* pInst = sGameObjInstList + id;
+
+	// check if current instance is not used
+	// it is not used => use it to create the new instance
+	pInst->pObject = sGameObjList + type;
+	pInst->posCurr = pPos ? *pPos : zero;
+	pInst->dirCurr = dir;
+	pInst->flag = FLAG_ACTIVE;
+	pInst->scale = scale;
+
+	pInst->velCurr = pVel ? *pVel : zero;
+
+
+	if (pInst->pObject == nullptr)
+		std::cout << "ISNULL\n";
+}
 
 void gameObjInstSet(int id, unsigned long type,
 	float scale,
@@ -673,4 +694,15 @@ void SetPackageInterval()
 {
 	packageInterval = timeElapsed;
 	timeElapsed = 0.0;
+}
+
+int GetShipLive(int id)
+{
+	for (const SHIP_OBJ& s : allShipInfo)
+	{
+		if (s.objectID == id)
+			return s.shipLive;
+	}
+
+	return 0;
 }
