@@ -47,6 +47,7 @@ struct SERVER_INITIAL_MESSAGE_FORMAT
 struct GAME_SCORE {
 	int score;
 	int live;
+	bool isDead;
 };
 
 //------------------------------------

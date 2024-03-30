@@ -448,35 +448,58 @@ void GameStateAsteroidsDraw(void)
 	AEGfxSetRenderMode(AE_GFX_RM_COLOR);
 	AEGfxSetBlendMode(AE_GFX_BM_BLEND);
 	//AEGfxTextureSet(NULL, 0, 0);
+	if (gameScore.live == 1234) {
+			std::lock_guard<std::mutex> lock2(GAME_SCORE_MUTEX);
+			sprintf_s(strBuffer, "Score: %d", gameScore.score);
+			AEGfxPrint(static_cast<s8>(fontid), strBuffer, .0f, .5f, 1.5f, 1.f, 0.f, 1.f);
 
-	// draw all object instances in the list
-	for (unsigned long i = 0; i < GAME_OBJ_INST_NUM_MAX; i++)
-	{
-		GameObjInst * pInst = sGameObjInstList + i;
+			//	printf("%s \n", strBuffer);
 
-		// skip non-active object
-		if ((pInst->flag & FLAG_ACTIVE) == 0)
-			continue;
-		
-		// Set the current object instance's transform matrix using "AEGfxSetTransform"
-		AEGfxSetTransform(pInst->transform.m);
-		// Draw the shape used by the current object instance using "AEGfxMeshDraw"
-		AEGfxMeshDraw(pInst->pObject->pMesh, AE_GFX_MDM_TRIANGLES);
+			sprintf_s(strBuffer, "YOU WIN");
+			AEGfxPrint(static_cast<s8>(fontid), strBuffer, .0f, .8f, 1.5f, 1.f, 0.f, 1.f);
+
+	}
+	else if (!gameScore.isDead) {
+		// draw all object instances in the list
+		for (unsigned long i = 0; i < GAME_OBJ_INST_NUM_MAX; i++)
+		{
+			GameObjInst* pInst = sGameObjInstList + i;
+
+			// skip non-active object
+			if ((pInst->flag & FLAG_ACTIVE) == 0)
+				continue;
+
+			// Set the current object instance's transform matrix using "AEGfxSetTransform"
+			AEGfxSetTransform(pInst->transform.m);
+			// Draw the shape used by the current object instance using "AEGfxMeshDraw"
+			AEGfxMeshDraw(pInst->pObject->pMesh, AE_GFX_MDM_TRIANGLES);
+		}
+
+		//You can replace this condition/variable by your own data.
+		//The idea is to display any of these variables/strings whenever a change in their value happens
+		//static bool onValueChange = true;
+		//if(true)
+		//{
+		{
+			std::lock_guard<std::mutex> lock2(GAME_SCORE_MUTEX);
+			sprintf_s(strBuffer, "Score: %d", gameScore.score);
+			AEGfxPrint(static_cast<s8>(fontid), strBuffer, .0f, .5f, 1.5f, 1.f, 0.f, 1.f);
+
+			//	printf("%s \n", strBuffer);
+
+			sprintf_s(strBuffer, "Ship Left: %d", gameScore.live >= 0 ? gameScore.live : 0);
+			AEGfxPrint(static_cast<s8>(fontid), strBuffer, .0f, .8f, 1.5f, 1.f, 0.f, 1.f);
+		}
 	}
 
-	//You can replace this condition/variable by your own data.
-	//The idea is to display any of these variables/strings whenever a change in their value happens
-	//static bool onValueChange = true;
-	//if(true)
-	//{
-	{
+	else {
 		std::lock_guard<std::mutex> lock2(GAME_SCORE_MUTEX);
 		sprintf_s(strBuffer, "Score: %d", gameScore.score);
 		AEGfxPrint(static_cast<s8>(fontid), strBuffer, .0f, .5f, 1.5f, 1.f, 0.f, 1.f);
 
 		//	printf("%s \n", strBuffer);
 
-		sprintf_s(strBuffer, "Ship Left: %d", gameScore.live >= 0 ? gameScore.live : 0);
+		sprintf_s(strBuffer, "YOU LOSE");
 		AEGfxPrint(static_cast<s8>(fontid), strBuffer, .0f, .8f, 1.5f, 1.f, 0.f, 1.f);
 	}
 	//	//AEGfxPrint(600, 10, (u32)-1, strBuffer);

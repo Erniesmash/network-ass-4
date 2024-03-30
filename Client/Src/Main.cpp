@@ -253,6 +253,7 @@ void ReceiveServerMessages(SOCKET clientSocket) {
 			memcpy(&shipInfo, &buffer[8 + (i*sizeof(SHIP_OBJ_INFO))], sizeof(SHIP_OBJ_INFO));
 			if ( i == assignedShipID ){
 				std::lock_guard<std::mutex> lock(GAME_SCORE_MUTEX);
+				gameScore.isDead = shipInfo.dead;
 				gameScore.score = shipInfo.score;
 				gameScore.live = shipInfo.live;
 			}

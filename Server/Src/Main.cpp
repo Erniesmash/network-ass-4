@@ -136,6 +136,11 @@ int WinsockServerSetup() {
 	std::cout << "Server Port Number: ";
 	std::cin >> portString;
 	std::cout << std::endl;
+	double interval{};
+	std::cout << "Server packet interval: ";
+	std::cin >> interval;
+	std::cout << std::endl;
+	PACKAGE_INTERVAL = interval;
 
 	// Start Winsock
 	WSADATA wsaData{};

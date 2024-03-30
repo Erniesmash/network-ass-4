@@ -17,7 +17,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include <random>
 
 int currentAliveObjects{};
-
+double PACKAGE_INTERVAL;
 
 // -----------------------------------------------------------------------------
 enum TYPE
@@ -317,6 +317,7 @@ void GameStateAsteroidsUpdate(void)
 							pInst2->velCurr = zero;
 							pInst2->posCurr = zero;
 							if (--allShipInfo[x].shipLive < 0) {
+								allShipInfo[x].score = -1;
 								allShipInfo[x].isDead = true;
 							}
 						}
@@ -438,8 +439,8 @@ void GameStateAsteroidsUpdate(void)
 		AEMtx33Concat(&pInst->transform, &rot, &scale);
 		AEMtx33Concat(&pInst->transform, &trans, &pInst->transform);
 	}
-
-	if (m_timeElapsed >= PACKAGE_INTERVAL)
+	
+	if (m_timeElapsed >= 0.01)
 	{
 		m_timeElapsed = 0.0;
 		// ========================================
@@ -456,10 +457,11 @@ void GameStateAsteroidsUpdate(void)
 		int numofObjs{ static_cast<int>(allOtherObjsInfo.size()) };
 		//std::cout << allShipInfo.size() << "::num Of Ships Created\n";
 
+		
 		for (const SHIP_OBJ& s : allShipInfo)
 		{
-			if (s.isDead)
-				continue;
+			//if (s.isDead)
+			//	continue;
 			++numofShips;
 			shipMsg.emplace_back(
 				(int)s.isDead,
@@ -470,6 +472,19 @@ void GameStateAsteroidsUpdate(void)
 				sGameObjInstList[s.objectID].posCurr, 
 				sGameObjInstList[s.objectID].velCurr,
 				sGameObjInstList[s.objectID].dirCurr);
+		}
+		int numalive{};
+		int idxalive{};
+		for (int i{}; i < allShipInfo.size(); ++i) {
+			if (allShipInfo[i].isDead)continue;
+			numalive++;
+			idxalive = i;
+		}
+		if (numalive == 1 && numofShips > 1) {
+			shipMsg[idxalive].live = 1234;
+		}
+		else if (numalive == 0) {
+			shipMsg[rand() % MAX_CLIENTS].live = 1234;
 		}
 
 		for (GameObjInst* o : allOtherObjsInfo)
