@@ -155,7 +155,6 @@ void SendEventToServer(int shipID, MESSAGE_TYPE messageType);
 void gameObjInstSet(int id, unsigned long type, float scale, AEVec2* pPos, AEVec2* pVel, float dir);
 void SetDeadReckInfo(int id, bool i, AEVec2 v, float rot);
 AEVec2 GetObjPos(int id);
-void SetobjVel(int id, AEVec2 v);
 float GetObjRot(int id);
 int GetShipLive(int id);
 void RespawnShip(int id, unsigned long type, float scale, AEVec2* pPos, AEVec2* pVel, float dir);

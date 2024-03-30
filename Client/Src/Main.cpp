@@ -272,12 +272,6 @@ void ReceiveServerMessages(SOCKET clientSocket) {
 			CorrectionVec.y = (abs(ydist) <= static_cast<float>(AEGetWindowHeight()) / 2.0f) ? ydist : (ydist <= 0.f) ? (static_cast<float>(AEGetWindowHeight()) - abs(ydist)) : ((static_cast<float>(AEGetWindowHeight()) - abs(ydist)) * -1.0f);
 			
 			float CorrectionRot = (abs(rotDiff) <= PI)? rotDiff : (rotDiff <= 0.f) ? (PI*2.0f - abs(rotDiff)) : ((PI * 2.0f - abs(rotDiff)) * -1.0f);
-			AEVec2 normVec{};
-			AEVec2Normalize(&normVec, &CorrectionVec);
-			shipInfo.velCurr.x += normVec.x;
-			shipInfo.velCurr.y += normVec.y;
-
-			SetobjVel(shipInfo.shipID, shipInfo.velCurr);
 			SetDeadReckInfo(shipInfo.shipID, true, CorrectionVec, CorrectionRot); //Set some dunmmy value
 
 	

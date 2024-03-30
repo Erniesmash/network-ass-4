@@ -706,8 +706,3 @@ int GetShipLive(int id)
 
 	return 0;
 }
-
-void SetobjVel(int id, AEVec2 v)
-{
-	sGameObjInstList[id].velCurr = v;
-}
