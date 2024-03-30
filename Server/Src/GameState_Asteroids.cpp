@@ -551,54 +551,7 @@ void GameStateAsteroidsUpdate(void)
 // TO REMOVE AS SERVER SHOULDNT DRAW
 void GameStateAsteroidsDraw(void)
 {
-	char strBuffer[1024];
 	
-	AEGfxSetRenderMode(AE_GFX_RM_COLOR);
-	AEGfxTextureSet(NULL, 0, 0);
-
-	// draw all object instances in the list
-	for (unsigned long i = 0; i < GAME_OBJ_INST_NUM_MAX; i++)
-	{
-		GameObjInst * pInst = sGameObjInstList + i;
-
-		// skip non-active object
-		if ((pInst->flag & FLAG_ACTIVE) == 0)
-			continue;
-		
-		// Set the current object instance's transform matrix using "AEGfxSetTransform"
-		AEGfxSetTransform(pInst->transform.m);
-		// Draw the shape used by the current object instance using "AEGfxMeshDraw"
-		AEGfxMeshDraw(pInst->pObject->pMesh, AE_GFX_MDM_TRIANGLES);
-	}
-
-	//You can replace this condition/variable by your own data.
-	//The idea is to display any of these variables/strings whenever a change in their value happens
-	//static bool onValueChange = true;
-	/*
-	if(onValueChange)
-	{
-		sprintf_s(strBuffer, "Score: %d", sScore);
-		//AEGfxPrint(10, 10, (u32)-1, strBuffer);
-		printf("%s \n", strBuffer);
-
-		sprintf_s(strBuffer, "Ship Left: %d", sShipLives >= 0 ? sShipLives : 0);
-		//AEGfxPrint(600, 10, (u32)-1, strBuffer);
-		printf("%s \n", strBuffer);
-
-		// display the game over message
-		if (sShipLives < 0)
-		{
-			//AEGfxPrint(280, 260, 0xFFFFFFFF, "       GAME OVER       ");
-			printf("       GAME OVER       \n");
-		}
-
-		if (sScore >= 5000) {
-			printf("You Rock \n");
-		}
-
-		onValueChange = false;
-	}
-	*/
 }
 
 /******************************************************************************/
