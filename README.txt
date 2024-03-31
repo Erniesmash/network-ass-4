@@ -8,10 +8,8 @@ Xavier Choa Kai Rong
     - Client Project
         - GameStateMgr.cpp, GameStateMgr.h, Collision.cpp, Collision.h 
 Liu Wanting
-    - Client Project
-        - GameState_Asteroids.cpp, GameState_Asteroids.h
     - Server Project   
-        - Main.cpp, Collision.cpp
+        - Main.cpp, Collision.cpp, GameState_Asteroids.cpp, GameState_Asteroids.h
 Tan Cheng Hian
     - Server Project
         - GameState_Asteroids.cpp, GameState_Asteroids.h, Collision.cpp, Collision.h
